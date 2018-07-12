@@ -7,7 +7,7 @@
       "root": "",
       "sourceRoot": "src",
       "projectType": "application",
-      "prefix": "app",
+      "prefix": "pwa",
       "schematics": {
         "@schematics/angular:class": {
           "spec": false
@@ -41,10 +41,8 @@
             "polyfills": "src/polyfills.ts",
             "tsConfig": "src/tsconfig.app.json",
             "assets": [
-              "src/favicon.ico",
-              "src/assets",
-              "src/manifest.json"
-            ],
+              "src/assets"
+			],
             "styles": [
               "src/styles.css"
             ],
@@ -100,9 +98,7 @@
             ],
             "scripts": [],
             "assets": [
-              "src/favicon.ico",
-              "src/assets",
-              "src/manifest.json"
+              "src/assets"
             ]
           }
         },

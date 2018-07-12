@@ -1,0 +1,30 @@
+.appContainer{
+    height: 100%;
+
+}
+mat-toolbar{
+    font-weight: 300;
+    z-index: 10;
+    box-shadow: 0 0 20px 0 #767676;
+    position: relative;
+}
+
+.logo-pwa{
+    position: absolute;
+    right: 20px;
+    top: 7px;
+}
+.logo-pwa mat-icon{
+    width: 50px;
+    height: 50px;
+}
+
+mat-sidenav-container {
+    height: calc(100% - 64px);
+}
+.matSideDrawer{
+    width: 270px;
+    height: 100%;
+    direction: rtl;
+}
+

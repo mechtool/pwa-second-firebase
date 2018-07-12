@@ -1,1 +1,119 @@
-/* You can add global styles to this file, and also import other style files */
+/*
+@import "~@angular/material/prebuilt-themes/indigo-pink.css";
+@import "assets/normalize.css";
+*/
+@import "../appTheme/theme.css";
+
+@font-face {
+    font-family: 'Material Icons';
+    font-style: normal;
+    font-weight: 400;
+    src: url("fonts/materialIcons.woff2") format('woff2');
+}
+
+@font-face {
+    font-family: 'RobotoCondensed-Regular';
+    font-style: normal;
+    font-weight: 400;
+    src: url("fonts/RobotoCondensed-Regular.ttf");
+}
+@font-face {
+    font-family: 'RobotoCondensed-Light';
+    font-style: normal;
+    font-weight: 300;
+    src: url("fonts/RobotoCondensed-Light.ttf");
+}
+.material-icons {
+    font-family: 'Material Icons', sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+}
+
+html{
+    height: 100%;
+}
+body{
+    margin: 0;
+    font-family: RobotoCondensed-Light, Roboto,sans-serif;
+    height: inherit;
+}
+div.appContainer *[class^=mat], div.appContainer mat-card{
+    font-family: RobotoCondensed-Light, Roboto,sans-serif !important;
+}
+div.appContainer mat-icon.material-icons{
+    font-family: "Material Icons" !important;
+}
+.buttonTip{
+    font-size: 12px;
+    font-weight: 200;
+    background-color: #ac2931 !important;
+}
+
+.mat-sidenav-content > router-outlet + * > mat-card{
+    min-height: calc(100% - 50px);
+}
+/*-----------------template colors------------------------*/
+span.blue{
+    color : #0064d5;
+}
+span.dark-blue{
+    color : #00008d;
+}
+span.lite-blue{
+    color: #c1dfff;
+}
+span.green{
+    color: #006500;
+}
+span.lite-green{
+    color: #c9ffc7;
+}
+span.grey{
+    color: #8a8a8a;
+}
+span.purple{
+    color: purple;
+}
+span.lite-purple{
+    color: #f2c7ec;
+}
+span.sky{
+    color: #009a9d;
+}
+span.dark-sky{
+    color: #007a7c;
+}
+span.lite-sky{
+    color: #b7f6e2;
+}
+span.brown{
+    color : #9d3400;
+}
+span.lite-brown{
+    color: #ffb57c;
+}
+span.red{
+    color: #ff0000;
+}
+span.dark-red{
+    color: #b20000;
+}
+span.lite-red{
+    color: #ff847f;
+}
+span.yellow{
+    color: #ffb900;
+}
+span.lite-yellow{
+    color: #ffef5c;
+}
