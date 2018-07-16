@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 
-export class MenuItem {
-    constructor(public text : string, public href : string, public className : string, public activeClass : string = 'activeRoute',public icon? : string, public children? : MenuItem[]){}
+export class SideNavItem {
+    constructor(public text : string, public href : string, public className : string, public activeClass : string = 'activeRoute',public icon? : string, public children? : SideNavItem[]){}
 }
 export class GridItem {
-    constructor(public header : string, public icon : string,public link : string, public text : string){}
+    constructor(public title : string, public icon : string,public link : string, public text : string){}
 }
 @Injectable()
 export class CommunicationService{//сервис для передачи списка элементов навигации, соответствуюего определенному

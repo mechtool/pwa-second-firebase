@@ -4,7 +4,7 @@ import { StartPageComponent } from './modules/common/start-page/start-page.compo
 
 const routes: Routes = [
     {path : 'guides', loadChildren : './modules/guides/guides.module#GuidesModule'},
-    {path : 'samples', loadChildren : './modules/samples/samples.module#SamplesModule'},
+    {path : 'samples', loadChildren : './modules/samples/samples.module#SamplesModule', data : {type : 'samples'}},
     {path : '', component : StartPageComponent},
 ];
 

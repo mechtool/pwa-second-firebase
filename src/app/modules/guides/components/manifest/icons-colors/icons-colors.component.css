@@ -1,0 +1,18 @@
+.imgColorBar{
+    display: flex;
+}
+.transImg,.blackImg{
+    width: 50%;
+}
+.transImg img,.blackImg img{
+    width: 100%;
+}
+@media (max-width: 960px) {
+    .imgColorBar{
+        display: block;
+        width: 100%;
+    }
+    .transImg,.blackImg{
+        width: 80%;
+    }
+}

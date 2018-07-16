@@ -1,0 +1,16 @@
+<div class="tableCode">
+	<table>
+		<colgroup align="center" >
+			<col width="250">
+		</colgroup>
+		<tbody>
+			<tr>
+				<td *ngFor="let text of context.headers">{{text}}</td>
+			</tr>
+			<tr *ngFor="let temp of context.templates" >
+				<ng-container [ngTemplateOutlet]="temp"></ng-container >
+			</tr>
+		</tbody>
+	</table>
+</div>
+

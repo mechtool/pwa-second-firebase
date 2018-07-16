@@ -1,0 +1,11 @@
+<div class="gridContainer" fxLayout>
+	<a fxFlex class="gridItem" *ngFor="let item of context" [routerLink]="item.link">
+		<mat-card class="gridCard">
+			<div class="gridHeader">
+				<img class="gridIcon" [src]="item.icon">
+				<span class="gridInnerHeader">{{item.title}}</span>
+			</div>
+			<div class="gridContent" [innerHTML]="sanitizer.bypassSecurityTrustHtml(item.text)"></div>
+		</mat-card>
+	</a>
+</div>

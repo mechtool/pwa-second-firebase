@@ -9,14 +9,19 @@ mat-toolbar{
     position: relative;
 }
 
-.logo-pwa{
-    position: absolute;
-    right: 20px;
-    top: 7px;
+.logoBlock{
+    flex-basis: 100%;
+    justify-content: flex-end;
+    align-items: center;
 }
-.logo-pwa mat-icon{
+.logo-pwa img{
     width: 50px;
     height: 50px;
+    position: relative;
+    top: 4px;
+}
+.format-color-button{
+    margin-right: 8px;
 }
 
 mat-sidenav-container {

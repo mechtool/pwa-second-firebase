@@ -1,0 +1,221 @@
+<mat-card  style="margin: 16px" class="pwa-page">
+	<h3 id="description" pwa-query-selector>Манифест.</h3>
+	<p>Это текстовый файл расширения <span class="blue">json</span>, который предназначени для координации установки приложения на устройство пользователя, обеспечивая установку иконки приложения на домашний экран (рабочий стол) устройства, содержит вспомогательные данные об имени или кратком имени приложения, его авторе, иконках, описании и др. Этот файл является частью набора технологий прогрессивных веб приложений, способных запускаться на устройствах без необходимости загрузки этих приложений через <span class="blue">app store</span> (магазин приложений). Файл манифеста можно использовать на любом сайте, но обязателен он лишь для приложений  <span class="blue">PWA</span>. При запуске приложения через манифест оно:
+	</p>
+	<ul>
+		<li>Получает уникальную иконку и имя, отличающее его от других приложений.</li>
+		<li>Отображает пользователю стартовый экран во время первой загрузки приложения.</li>
+		<li>Предоставляет браузеру характеристики приложения по умолчанию, реализуя плавный переход между запуском приложения и загрузкой его ресурсов.</li>
+	</ul>
+	<h4 id="apply" pwa-query-selector>Применение и пример файла манифеста.</h4>
+	<p>Слыка на файл манифеста располагается в документе <span class="blue">HTML</span>, через элемент <span class="blue">link</span>. </p>
+	<pwa-example-code [context]="{header : 'Загрузка файла манифеста в приложение', ext : 'html'}">
+<pre>
+<span class="purple" >&#60;link</span> <span class="dark-blue" >rel=</span><span class="green" >"manifest"</span> <span class="dark-blue" >href=</span><span class="green" >"/manifest.json"</span><span class="purple">&#62;</span>
+</pre>
+	</pwa-example-code>
+	<h4 >Создание файла манифеста.</h4>
+	<p>Файл манифеста может иметь любое имя, но наиболее распоспространенное - <span class="dark-blue">manifect.json</span>, обязательными полями которого являются <span class="blue">name</span> и <span class="blue">short_name</span> (выделены красным),  пример ниже:</p>
+<pwa-example-code [context]="{header : 'Пример определения файла манифеста', ext : 'manifest.json'}">
+<pre>
+<span class="green" >&#123;</span>
+  <span class="red" >"name" : "Имя приложения",
+  "short_name" : "Краткое имя приложения",</span><span class="green">
+  "start_url" : ".",
+  "display" : "standalone",
+  "background_color" : "#fff",
+  "description" : "Описание приложения.",
+  "icons":
+    [&#123;
+      "src" : "images/touch/homescreen48.png",
+      "sizes" : "48x48",
+      "type" : "image/png"
+   &#125;,
+   &#123;
+     "src" : "images/touch/homescreen72.png",
+     "sizes" : "72x72",
+     "type" : "image/png"
+   &#125;,
+   &#123;
+     "src" : "images/touch/homescreen96.png",
+     "sizes" : "96x96",
+     "type" : "image/png"
+   &#125;,
+   &#123;
+     "src" : "images/touch/homescreen144.png",
+     "sizes" : "144x144 168x168 192x192",
+     "type" : "image/png"
+   &#125;],
+  "related_applications" : [&#123; "platform" : "web" &#125;]
+&#125;</span>
+</pre>
+</pwa-example-code>
+	<h4 id="properties" pwa-query-selector>Свойства файла манифеста.</h4>
+	<pwa-api-table-template [context]="{headers : ['Свойство', 'Описание'], templates : [t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16]}">
+		<ng-template #t1>
+			<td><span class="itemName">background_color</span> : <span class="dark-blue" >string</span></td>
+			<td>Определяет ожидаемый фоновый цвет приложения. Это свойство дублирует одноименное свойство файла .css приложения и может быть использовано при загрузке приложения, когда основная таблица стилей еще не доступна, что создает плавный переход запуска приложения и загрузки основного контента. Тип: один из корректных типов представления цвета в <span class="dark-blue" >CSS</span>.</td>
+		</ng-template>
+		<ng-template #t2>
+			<td><span class="itemName">description</span> : <span class="dark-blue">string</span></td>
+			<td>Общее описание приложения.</td>
+		</ng-template>
+		<ng-template #t3>
+			<td><span class="itemName">dir</span> : <span class="dark-blue" >string</span></td>
+			<td>Определяет направление текста для свойств <span class="dark-blue">name</span>, <span class="dark-blue">short_name</span>, <span class="dark-blue">description</span>. Вместе со свойством <span class="dark-blue">lang</span> обеспечивает правильное отображение текста с направлением справа налево. Содержит одно из значений :
+			<ul>
+				<li><span class="dark-blue">ltr</span> (слева на право)</li>
+				<li><span class="dark-blue">rtl</span> (справа на лево)<</li>
+				<li><span class="dark-blue">auto</span> (Браузер использует двунаправленный алгоритм Юникода для лутшего отображения символов)<</li>
+			</ul>
+				По умолчанию: <span class="dark-blue">auto</span>.
+			</td>
+		</ng-template>
+		<ng-template #t4>
+				<td><span class="itemName">display</span> : <span class="dark-blue" >string</span></td>
+			<td>Определяет режим отображения приложения. Содержит одно из значений:
+				<ul>
+					<li><span class="dark-blue" >fullscreen</span> - приложени занимает все доступное пространство экрана. Резервная модель - <span class="dark-blue" >standalone</span>.</li>
+					<li><span class="dark-blue" >standalone</span> - приложение представляется как отдельное, имеющее своё окно, свою иконку в загрузчике приложений. В этом режиме браузер исключает элементы пользовательского интерфейса приложения из управления навигацией. Резервная модель - <span class="dark-blue" >minimal-ui</span>.</li>
+					<li><span class="dark-blue" >minimal-ui</span> - тоже, что и <span class="dark-blue" >standalone</span>, но имеет минимальный набор элементов пользовательского интерфейса управления навигацией. Элементы варьируются в зависимости от типа браузера. Резервная модель - <span class="dark-blue" >browser</span></li>
+					<li><span class="dark-blue" >browser</span> - приложение открывается в обычной браузерной закладке или новом окне, в зависимости от типа браузера и платформы. Резервной модели нет.</li>
+				</ul>
+			</td>
+		</ng-template>
+		<ng-template #t5>
+			<td colspan="2"><span class="d-blue aster">&#9733;</span><span>Можно применить <span class="dark-blue">CSS</span> к приложению выборочно, основываясь на значении медиазапроса <a target="_blank" href="https://developer.mozilla.org/ru/docs/Web/CSS/%40media/display-mode">display-mode</a> </span>. Это используется для предоставления совместной визуализации между загрузкой приложения из <span class="dark-blue">URL</span>, и загрузкой приложения через иконку на рабочем столе.</td>
+		</ng-template>
+		<ng-template #t6>
+			<td><span class="itemName">icons</span> : <span class="dark-blue">string</span></td>
+			<td>Представляет массив объектов изображений, использующийся приложением в различных контекстах, к примеру: для представление приложения в списки других приложений или встраивания иконки приложения в переключатель задач операционных систем. Каждый объект изображения содержит свойства:
+				<ul>
+					<li><span class="dark-blue">sizes</span> - группа размеров изображений в пикселях (ширина/высота, разделенные символом <span class="dark-blue">x</span>), разделяемые символом пробела. К примеру : <span class="dark-blue">"sizes" : "72x72 96x96 128x128 256x256".</span> </li>
+					<li><span class="dark-blue">src</span> - путь к файлу изображения. Если представлен относительным путем, корневым URL будет URL файла манифеста.</li>
+					<li><span class="dark-blue">type</span> - <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types">mime</a> тип изображения, цель которого позвольть браузеру бысто проигнорировать типы изображений, которые он не поддерживает.</li>
+				</ul>
+			</td>
+		</ng-template>
+		<ng-template #t7>
+			<td colspan="2"><span class="d-blue aster">&#9733;</span><span>При сохранении иконки для домашнего экрана, Chrome сначала ищет иконки, подходящие для плотности пикселей дисплея и сортирует их, ориентируясь на плотность в 48dp. Если ни одна подобная иконка не найдена, он подбирает иконку, наиболее близко подходящую под характеристики устройства. Если, по каким-либо причинам, необходимо указать целевую иконку под определенную плотность пикселей, можно использовать необязательное числовое свойство <span class="dark-blue" >density</span>. Без явного указания значения этого свойства оно будет равно <span class="dark-blue" >1</span>. Это означает применение иконки для экранной плотности в единицу и более.</span></td>
+		</ng-template>
+		<ng-template #t8>
+			<td><span class="itemName">lang</span> : <span class="dark-blue">string</span></td>
+			<td>Определяет язык для значений свойств <span class="dark-blue">name, short_name</span>. Строка, содержащая значение аналогичного HTML атрибута <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/lang">lang</a>.</td>
+		</ng-template>
+		<ng-template #t9>
+			<td><span class="itemName">name</span> : <span class="dark-blue">string</span></td>
+			<td>Имя приложения, отображаемое пользователю, к примеру, в списке других приложений или подпись к иконке приложения.</td>
+		</ng-template>
+		<ng-template #t10>
+			<td><span class="itemName">orientation</span> : <span class="dark-blue">string</span></td>
+			<td>Определяет ориентацию приложения по умолчанию. Используется одно значение изи списка:
+				<ul>
+					<li><span class="dark-blue">any</span> - произвольно</li>
+					<li><span class="dark-blue">natural</span> - первоначальная</li>
+					<li><span class="dark-blue">landscape</span> - ландшафт</li>
+					<li><span class="dark-blue">landscape-primary</span> - ландшафт постоянно</li>
+					<li><span class="dark-blue">landscape-secondary</span> - ландшафт повторно</li>
+					<li><span class="dark-blue">portrait</span> - портрет</li>
+					<li><span class="dark-blue">portrait-primary</span> - портрет постоянно</li>
+					<li><span class="dark-blue">portrait-secondary</span> - портрет повторно</li>
+				</ul>
+			</td>
+		</ng-template>
+		<ng-template #t11>
+			<td><span class="itemName">prefer_related_applications</span> : <span class="dark-blue">boolean</span></td>
+			<td>Управляет возможностью отображения подсказки на связанные нативные приложения, которая будет доступна пользователю. Это используется в том случае, если нативное приложение предоставляет функциональность, которую не может предложить веб приложение. По умолчанию : <span class="dark-blue" >false</span>.</td>
+		</ng-template>
+		<ng-template #t12>
+			<td><span class="itemName">related_applications</span></td>
+			<td>Определяет массив объектов приложений, представляющий нативные приложения, устанавливаемые или доступные для определенной платформы. К примеру, <span class="dark-blue" >Android</span> приложение, получаемое через <span class="dark-blue" >Google Play Store</span>. Свойствами объекта являются:
+				<ul>
+					<li><span class="dark-blue" >platform</span> - платформа для которой написано приложение.</li>
+					<li><span class="dark-blue" >url</span> - адрес приложения в сети.</li>
+					<li><span class="dark-blue" >id</span> - идентификатор приложения, идентифицирующий приложение для определяемой платформы.</li>
+				</ul>
+			</td>
+		</ng-template>
+		<ng-template #t13>
+			<td><span class="itemName">scope</span> : <span class="dark-blue">string</span></td>
+			<td>Определяет <span class="dark-blue" >URL</span> корневого контекст поиска приложения. Он ограничивает область просмотра веб страниц после применения манифеста. Если пользователь пытается выйти за пределы корневого контекста, он возвращается на текущую веб страницу. Относительные URLs определяются относительно файла манифеста.</td>
+		</ng-template>
+		<ng-template #t14>
+			<td><span class="itemName">scope</span> : <span class="dark-blue">string</span></td>
+			<td>Краткое имя приложения, предназначается для представления имени приложения в ограниченных, для
+				отображения полного имени приложения, областях.</td>
+		</ng-template>
+		<ng-template #t15>
+			<td><span class="itemName">start_url</span> : <span class="dark-blue">string</span></td>
+			<td>Определяет <span class="dark-blue" >URL</span>, загружающий ресурс, когда пользователь запускает приложение. Относительный путь определяется относительно файла манифеста.</td>
+		</ng-template>
+		<ng-template #t16>
+			<td><span class="itemName">theme_color</span> : <span class="dark-blue">string</span></td>
+			<td>Определяет цвет темы приложения по умолчанию, влияет на то, как приложение отображается в различных операционных системах. Оно влияет на цвет панели инструментов и его дублирует установка метатега с имененм <span class="dark-blue" >theme-color</span>. Тип: <span class="dark-blue" >string</span> - различные строковые представления типа значения цвета в <span class="dark-blue">CSS</span>.</td>
+		</ng-template>
+	</pwa-api-table-template>
+	<h4 id="startAddress" pwa-query-selector>Установка <span class="dark-blue">URL</span> стартового адреса.</h4>
+	<p>Если не установить свойство <span class="dark-blue">start_url</span>, то будет открыта страница приложения, указанная в строке браузера. В этом свойстве можно определять полее подробный запрос приложения, добавляя область параметров запроса, указывая дополнительные параметры. Значение этого свойства имеет преимущество и более значимо для <span class="dark-blue">Google Analytics</span>.</p>
+	<pwa-example-code [context]="{header : 'Определение стартового адреса приложения', ext : 'manifest.json'}">
+		<span class="green" >"start_url" : "/?utm_source=homescreen"</span>
+	</pwa-example-code>
+	<h4 id="icons" pwa-query-selector>Настройка иконок.</h4>
+	<img style="float: right; margin: 0 10px 10px 10px;" src="assets/icons/manifest/homescreen-icon.png">
+	<p>Когда пользователь добавляет сайт или приложение на домашний экран, можно определить набор иконок для использования браузером. При сохранении иконки на домашний экран, сначала, Chrome ищет иконки, которые соответствуют плотности пикселей экрана, кратные 48dp плотности. Если ни одна из иконок не найдена, поиск продолжается до нахождения наиболее подходящей иконки к параметрам экрана устройства. Если необходимо явно определить конкретную иконку на конкретную плотность пикселей экрана, можно воспользоваться свойством <span class="dark-blue">density</span>, числового типа, значение по умолчанию которорого равно 1, что означает : использовать иконку для плотностей экранных пикселей в единицу и выше, что обычно подходит для большинства устройств. Определить эти иконки можно, используя свойства <span class="dark-blue">type</span>, <span class="dark-blue">size</span>, пример ниже:</p>
+	<div style="clear: both;"></div>
+	<pwa-example-code [context]="{header : 'Определение иконок приложения', ext : 'manifest.json'}">
+	<span class="green" >"icons": [&#123;
+		    "src": "images/touch/icon-128x128.png",
+		    "type": "image/png",
+		    "sizes": "128x128"
+		  &#125;, &#123;
+		    "src": "images/touch/apple-touch-icon.png",
+		    "type": "image/png",
+		    "sizes": "152x152"
+		  &#125;, &#123;
+		    "src": "images/touch/ms-touch-icon-144x144-precomposed.png",
+		    "type": "image/png",
+		    "sizes": "144x144"
+		  &#125;, &#123;
+		    "src": "images/touch/chrome-touch-icon-192x192.png",
+		    "type": "image/png",
+		    "sizes": "192x192"
+		  &#125;],</span>
+	</pwa-example-code>
+	<h4 id="splashScreen" pwa-query-selector>Добавление заставки.</h4>
+	<p>Splash screen - заставка, появляется при запуске приложения на устройстве с иконки на домашнем экране, формируется при наличии установленных значений определенных свойств, при этом происходят следующие действия:</p>
+	<ul>
+		<li>Запускается Chrome.</li>
+		<li>Запускается визуализатор загрузки стартовой страницы.</li>
+		<li>Стартовая страница загружается (либо из сети, либо из кэша приложения, если имеется зарегистрированный Service worker).</li>
+	</ul>
+	<p>Когда это происходит, на экране появляется белая заставка, создавая впечатления зависания загрузки ресурса. Это особенно очевидно, если загружается ресурс из сети, где загрузка до первого отображения занимает две секунды и более. Для заполнения белого экрана отображением названия приложения, иконкой и предпочтительным цветом фона, используются несколько свойств файла манифеста:</p>
+	<ul>
+		<li><span class="dark-blue">icons</span> - массив иконок, из которых выбирается изображение для баннера домашнего экрана.</li>
+		<li><span class="dark-blue">name</span> - отображается в названии приложения.</li>
+		<li><span class="dark-blue">background_color</span> - цвет фона заставки.</li>
+	</ul>
+	<h4 id="startStyle" pwa-query-selector>Стиль запуска.</h4>
+	<p>Для контроля типа отображения приложения и страничной ориентации используются свойства манифеста.</p>
+	<ul>
+		<li>
+			<span class="dark-blue">display</span> - отвечает за отображения приложения в окружении браузерного интерфейса или в виде отдельного приложения. Имеет строчные значения: <span class="dark-blue">standalone</span> - приложение отображается вне браузерного интерфейса; <span class="dark-blue">browser</span> - приложение отображается к окружении браузерного интерфейса.
+			</li>
+		<li><span class="dark-blue">icons</span>	</li>
+	</ul>
+	<img [ngStyle]="{'width' : '39%'}" [ngStyle.lt-md]="{'width' : '80%', 'left' : '10%', 'position' : 'relative'}" src="assets/icons/manifest/manifest-display-options.png">
+	<img [ngStyle]="{'width' : '55%'}" [ngStyle.lt-md]="{'width' : '100%'}" src="assets/icons/manifest/manifest-orientation-options.png" >
+	<h4 id="themeColor" pwa-query-selector>Установка цветовой темы.</h4>
+	<p>В Chrome введена концепция цветовой темы для сайта. Цветовая тема – цветовое оформление страницы: цвет панели адреса, цвет закладок. Если не использовать манифест и устанавливать цвет темы для каждой станицы, то для сайтов, имеющих несколько сот страниц – невыполнимая задача. Для управления цветовой темой используется свойство <span class="dark-blue">theme_color</span>, значение которого является корректное значение свойства цвета в <span class="dark-blue" >CSS</span>. Пример :</p>
+	<pwa-example-code [context]="{header : 'Определение цветовой темы приложения', ext : 'manifest.json'}">
+		<span class="green">"theme_color" : "#2196F3"</span>
+	</pwa-example-code>
+	<img [ngStyle]="{'width' : '60%', 'position' : 'relative', 'left' : '20%'}" [ngStyle.lt-md]="{'width' : '90%', 'position' : 'relative', 'left' : '5%'}" src="assets/icons/manifest/appThemeColor.png">
+	<h4 id="manifestTest" pwa-query-selector>Тестирование манифеста.</h4>
+	<p>Для проверки корректности установки свойств манифеста можно воспользоваться элементом меню <span class="dark-blue">Manifest</span> на закладке <span class="dark-blue" >Application</span> панели <span class="dark-blue" >Chrome DevTools</span>. Эта закладка предоставляет удобный способ проверки правильности установки свойств файла манифеста. Если нужно автоматизировать проверку файла манифеста, можно воспользоваться инструментом проверки <a target="_blank" href="https://developers.google.com/web/tools/lighthouse/" >Lighthouse</a> – веб приложение в виде расширения Chrome или загрузки через <span class="dark-blue" >npm</span>. Снабжаем его <span class="dark-blue" >URL</span> на наш сайт, оно его запускает и проверяет все станицы, и затем отображает диагностическое сообщение. Исследуя манифест, оно проверяет:</p>
+	<ul>
+		<li>Может ли приложение быть добавленным на экран устройства (homescreen).</li>
+		<li>Настроен ли Splash screen.</li>
+		<li>Настроена ли цветовая тема.</li>
+		<li>Запускается ли приложение по протоколу HTTPS.</li>
+	</ul>
+</mat-card>
