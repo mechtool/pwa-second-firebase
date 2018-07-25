@@ -5,8 +5,6 @@ import { ManifestRoutingModule } from './manifest-routing.module';
 
 //--------------------components----------------------------
 import { ManifestComponent } from './manifest.component';
-import { IconsColorsComponent } from './icons-colors/icons-colors.component';
-import { InstallMessagesComponent } from './install-messages/install-messages';
 //--------------material-----------------------------------
 import {FlexLayoutModule} from '@angular/flex-layout';
 import { MatCardModule} from '@angular/material';
@@ -23,8 +21,6 @@ import { MatCardModule} from '@angular/material';
   ],
   declarations: [
       ManifestComponent,
-      IconsColorsComponent,
-      InstallMessagesComponent,
   ]
 })
 export class ManifestModule { }

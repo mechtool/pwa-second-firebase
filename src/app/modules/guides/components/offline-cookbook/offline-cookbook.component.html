@@ -1,0 +1,390 @@
+<mat-card class="pwa-page" >
+	<h4 id="appShell" pwa-query-selector>Техника Offline</h4>
+	<p>Сервисный рабочий позволяет решить проблему автономности приложения и дает разработчикам механизмы для её самостоятельной реализации, что дает полный контроль над кэшированием ресурсов, запросами и их обработкой. Разработчик получает возможность создания собственных шаблонов кэширования. В этой статье попытаемся кратко рассмотреть изолированные шаблоны кэширования, но на практике, вероятно, будут использованы некоторые из них, в зависимости от собственных <span class="dark-blue">URL</span> и контекста. Весь код примеров работает на <span class="dark-blue">Chrome</span> и <span class="dark-blue">Firefox</span>, но более подробные сведения о поддержки технологии сервисного рабочего можно получить <a target="_blank" href="https://jakearchibald.github.io/isserviceworkerready/">здесь</a>. </p>
+	<h5 id="resourceStore" pwa-query-selector>Когда необходимо сохранять ресурсы.</h5>
+	<p>Сервисный рабочий позволяет нам обрабатывать запросы независимо от кэширования, поэтому рассмотрим их раздельно. Кэширование выполняется:</p>
+	<ul>
+		<li>
+			<h5 id="onInstall" pwa-query-selector>При установке (install), для загрузки зависимостей.</h5>
+			<p>Сервисный рабочий предоставляет событие <span class="dark-blue">install</span>, можно его использовать для подготовки компонентов приложения, до обработки других событий. Когда это происходит, то предыдущая версия сервисного рабочего все ещё работает и прослушивает страницы, поётому, то, что происходит в этой области кода не должно нарушать эту работу. Эта область подходит для загрузки файлов :  CSS, изображений, шрифтов, JS, шаблонов... того, что может рассматривается как статический ресцрс для текущей версии сайта. Это место, где сервисный рабочий может быть не установлен, если один из загружаемых им  ресурсов загрузился неудачно или произошла ошибка в этой области кода.</p>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/cm-on-install-dep.png">
+			</div>
+			<p>
+				<span class="dark-blue">event.waitUntil()</span> - получает в аргумент промис, возвращаемый методом кэширования, который определяет успех установки.Если промис отвергнут, установка сервисного рабочего считаетсч неудачной и он будет отброшен. Методы <span class="dark-blue">caches.open</span> и <span class="dark-blue">cache.addAll</span> возвращают промис, и если один из ресурсов в списке не загрузиться, этот промис будет сигнализировать об этом.
+			</p>
+			<pwa-example-code [context]="{header : 'Кэширование активов при установке', ext : 'sw.js'}">
+<pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'install',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >waitUntil( </span>
+      <span class="purple" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'mysite-static-v3'</span><span class="dark-blue" >).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >cache</span><span class="dark-blue" >) &#123;
+        return </span> <span class="dark-red" >cache.</span><span class="dark-blue" >addAll([</span>
+          <span class="green" >'/css/whatever-v3.css',
+          '/css/imgs/sprites-v6.png',
+          '/css/fonts/whatever-v8.woff',
+          '/js/all-min-v4.js'</span>
+        <span class="grey">// и т.д.</span>
+        <span class="dark-blue" >]);
+      &#125;)
+    );
+&#125;);</span>
+</pre>
+
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="onStoreData" pwa-query-selector>При установке (install), для загрузки данных.</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/cm-on-install-not.png">
+			</div>
+			<p>Подобно событию выше, но не использует задержку при установки и не рассматривает установку неудачной, в случае неудачного кэширования данных. Хорошо подходит для кэширования больших ресурсов данных с сервера, не являющихся частью оболочки приложения (данные перехода на следующий уровень в играх; данные текущего пользователя; данные различных таблиц и пр.)</p>
+<pwa-example-code [context]="{header : 'Кэширование данных при установке', ext : 'sw.js'}"><pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'install',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(</span>
+      <span class="purple" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'mygame-core-v1'</span><span class="dark-blue" >).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >cache</span><span class="dark-sky" >) &#123;</span>
+        <span class="dark-red" >cache.</span><span class="dark-blue" >addAll(</span><span class="grey">//Не используется оператор 'return'</span>
+      <span class="grey">// Загружаются данные уровней игры 11-20</span>
+      <span class="dark-blue" >);
+      return </span><span class="dark-red" >cache.</span><span class="dark-blue" >addAll(</span>
+      <span class=" grey">// Загружаются уровни игры  1-10, которые являются важными
+      //, и без которых игра невозможна,
+	      //поэтому возвращаем промис, что в случае неудачного
+      //кэширования, просигнализирует от этом.</span>
+      <span class="dark-blue" >);
+    &#125;)
+  );
+&#125;);</span></pre>
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="onActivation" pwa-query-selector>При активации.</h5>
+			<p>Хорошо подходит для отчистки старых кэшей и перехода с одного кэша на другой.</p>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/cm-on-activate.png">
+			</div>
+			<p>Как только сервисный рабочий установлен, и его предыдущая версия не используется, он активируется и запускается событие <span class="dark-blue">active</span>. Так как предыдущая версия сервисного рабочего не активна, отличное место для обработки схемы перехода на <span class="dark-blue">IndexedDB</span> и удаления неиспользованныз кэшей. Во время активации, другие события , такие как <span class="dark-blue">fetch</span> помещаются в очередь, поэтому длительная активация может блокировать загрузку страниц. Сохраняйте активацию, по возможности, очень простой, используйте её только для действий, которые не могут быть выполнены во время работы предыдущей версии сервисного рабочего.</p>
+<pwa-example-code [context]="{header : 'Обработка при активации', ext : 'sw.js'}"><pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'activate',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(</span>
+      <span class="purple" >caches.</span><span class="dark-blue" >keys().then(</span><span class="dark-sky" >function(</span><span class="dark-red" >cacheNames</span><span class="dark-blue" >) &#123;
+        return </span><span class="purple" >Promise.</span><span class="dark-blue" >all(</span>
+          <span class="dark-red" >cacheNames.</span><span class="dark-blue" >filter(</span><span class="dark-sky" >function(</span><span class="dark-red" >cacheName</span><span class="dark-sky" >) &#123;</span>
+          <span class="grey">// Возвращаем true если хотим удалить этот кэш,
+          // но помним, что кэши используются всем приложением</span>
+          <span class="dark-blue" >&#125;).map(</span><span class="dark-sky" >function(</span><span class="dark-red" >cacheName</span><span class="dark-blue" >) &#123;
+            return </span> <span class="purple" >caches.</span><span class="dark-blue" >delete(</span><span class="dark-red" >cacheName</span><span class="dark-blue" >);
+        &#125;)
+      );
+    &#125;)
+   );
+&#125;); </span></pre>
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="onActivity" pwa-query-selector>При пользовательской активности.</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/cm-on-user-interaction.png">
+			</div>
+			<p>Хорошо подходит, когда весь сайт не может быть переведен в автономный режим (слишком большой), и нужно позволить пользователю выбрать те данные, которые ему необходимы для автономного использования (видео, статьи и др.). Если предоставить пользователю кнопку в интерфейс , к примеру : "Прочитать позже" или "Сохранить для Offline", то при активации эти данные нужно загрузить и сохранить в кэш. <span class="dark-blue">Cache API</span> доступны как для страниц, так и для сервисного рабочего, поэтому нет необходимости запускать сервисного рабочего для добавления данных в кэш.</p>
+<pwa-example-code [context]="{header : 'Загрузка в кэш при пользовательской активности.', ext : 'sw.js'}"><pre><span class="purple" >document.</span><span class="dark-blue" >querySelector(</span><span class="green" >'.cache-article'</span><span class="dark-blue" >).addEventListener(</span><span class="green" >'click',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >preventDefault();
+    var id = </span><span class="purple" >this.</span><span class="dark-blue" >dataset.articleId;</span>
+    <span class="purple" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'mysite-article-'</span> <span class="dark-blue" >+ id).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >cache</span><span class="dark-sky" >) &#123;</span>
+        <span class="purple" >fetch(</span><span class="green" >'/get-article-urls?id='</span> <span class="dark-blue">+ id).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >response</span><span class="dark-sky" >) &#123;</span>
+          <span class="grey">// запрос URL статей, возвращаемой как JSON массив адресов</span>
+            <span class="dark-blue" >return</span> <span class="dark-red" >response.</span><span class="dark-blue" >json();
+         &#125;).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >urls</span><span class="dark-sky" >) &#125; </span>
+            <span class="dark-red">cache.</span><span class="dark-blue" >addAll(</span><span class="dark-red" >urls</span><span class="dark-blue" >);
+        &#125;);
+     &#125;);
+&#125;);</span>
+			</pre>
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="onWebRequest" pwa-query-selector>При сетевом запросе.</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/cm-on-network-response.png">
+			</div>
+			<p>Подходит для часто обновляемых ресурсов (пользовательские входящие сообщения, содержания статей, не основное содержимое(к примеру, аватарки)) с осторожностью. Если запрос ничему не соответствует в кэше, происходит запрос к серверу и ответ одновременно отображается пользователю и кэшируется. Если такой подход используется для диапазона адресов, необходимо быть осторожным с использованием необходимого дискового пространства. Необходим механизм освобождения ненужных ресурсов в кэше. Для эффективного использования памяти,  читать тело запроса/ответа можно только один раз, а так же из-за того, что эти объекты являются потоками, и при передаче экземпляры их уничтожаються. Поэтому, для множественной манипуляции этими объектами необходимо использовать метод <span class="dark-blue">clone()</span> для создания дополнительной копии, которая может быть повторно прочитана. </p>
+			<pwa-example-code [context]="{header : 'Сетевой запрос.', ext : 'sw.js'}"><pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >respondWith( </span>
+      <span class="purple" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'mysite-dynamic'</span><span class="dark-blue" >).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >cache</span><span class="dark-sky" >) &#123;</span>
+        <span class="dark-blue" >return </span><span class="dark-red" >cache.</span><span class="dark-blue" >match(</span><span class="dark-red" >event.</span><span class="dark-blue" >request).then(</span><span class="dark-sky" >function (</span><span class="dark-red" >response</span><span class="dark-sky" >) &#123;</span>
+            <span class="dark-blue" >return</span> <span class="d-dark-red" >response</span><span class="d-blue" >|| </span> <span class="purple" >fetch(</span><span class="dark-red" >event.</span><span class="dark-blue" >request).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >response</span><span class="dark-sky" >) &#123;</span>
+               <span class="dark-red" >cache.</span><span class="dark-blue" >put(</span><span class="dark-red" >event.</span><span class="dark-blue" >request, </span><span class="dark-blue" >response.</span><span class="dark-blue" >clone());
+                   return </span><span class="dark-red" >response</span><span class="dark-blue" >;
+       &#125;);
+      &#125;);
+    &#125;)
+  );
+&#125;);</span></pre>
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="onRefreshCache" pwa-query-selector>При обновлении в кэше при каждом запросе.</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/cm-stale-while-revalidate.png">
+			</div>
+			<p>Подходит для часто обновляемых ресурсах, где наличие последней версии не существенно. Если есть кэшированная версия, используется она, иначе происходит запрос, использование, кэширование и обновление кэша при каждом запросе.</p>
+			<pwa-example-code [context]="{header : 'Обновление кэша при каждом запросе', ext : 'sw.js'}"><pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >respondWith(</span><span class="purple" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'mysite-dynamic'</span><span class="dark-blue" >)
+        .then(</span><span class="dark-sky" >function(</span><span class="dark-red" >cache</span><span class="dark-sky" >) &#123; </span>
+           <span class="dark-blue" >return </span><span class="dark-red" >cache.</span><span class="dark-blue" >match(</span><span class="dark-red" >event.</span><span class="dark-blue" >request)
+           .then(</span><span class="dark-sky" >function(</span><span class="dark-red" >response</span><span class="dark-sky" >) &#123; </span>
+               <span class="dark-blue" >var fetchPromise = </span><span class="purple" >fetch(</span><span class="dark-red" >event.</span><span class="dark-blue" >request).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >networkResponse</span><span class="dark-blue" >) &#123;</span>
+                 <span class="dark-red" >cache.</span><span class="dark-blue" >put(</span><span class="dark-red" >event.</span><span class="dark-blue" >request, </span><span class="dark-red" >networkResponse.</span><span class="dark-blue" >clone());
+                return </span><span class="dark-red" >networkResponse;</span>
+             <span class="dark-blue" >&#125;)
+           return </span><span class="dark-red" >response </span><span class="dark-blue" >|| fetchPromise; </span>
+        <span class="dark-blue" >&#125;)
+     &#125;)
+   );
+&#125;);</span></pre>
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="incoming" pwa-query-selector>При входящих сообщениях.</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/cm-on-push.png">
+			</div>
+			<p>Входящие оповещения (<a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/Push_API">Push API</a>) - интерфейс, построенный на использовании сервисного рабочего, позволяющий ему получать входящие сообщения от сервиса операционной системы. Это происходит даже, когда приложение вовсе не запущено, но сервисный рабочий, работающий в фоне принимает такие запросы. Используется для оповещений обновления приложения, сообщения чата, новостные сообщения, почта и т.д. Результатом такой работы является оповещение, появляющееся на экране устройства, при нажатие на которое открывается или фокусируется приложение, но обновление кэша очень важно, и происходит в первую очередь. Устройство пользователя, в момент получения сообщения, находится в сети, но взаимодействие с сообщением и обновление контента из кэша может происходить и автономно. Пример кода, кэширующего полученные ресурсы до отображения сообщения: </p>
+			<pwa-example-code [context]="{header : 'Обновление кэша при входящем оповещении', ext : 'sw.js'}"><pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'push',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-blue" >) &#123;
+    if (</span><span class="dark-red" >event.</span><span class="dark-blue" >data.text() == </span><span class="green" >'new-email'</span><span class="dark-blue" >) &#123;</span>
+      <span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(</span>
+         <span class="purple" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'mysite-dynamic'</span><span class="dark-blue" >).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >cache</span><span class="dark-blue" >) &#123;
+            return </span><span class="purple" >fetch(</span><span class="green" >'/inbox.json'</span><span class="dark-blue" >).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >response</span><span class="dark-blue" >) &#123;</span>
+              <span class="dark-red" >cache.</span><span class="dark-blue" >put(</span><span class="green" >'/inbox.json', </span><span class="dark-red" >response.</span><span class="dark-blue" >clone());
+              return </span><span class="dark-red" >response.</span><span class="dark-blue" >json();
+        &#125;);
+       &#125;).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >emails</span><span class="dark-blue" >) &#123; </span>
+          <span class="dark-red" >registration.</span><span class="dark-blue" >showNotification(</span><span class="green" >"New email",</span> <span class="dark-blue" >&#123;
+             body : </span><span class="green" >"Из "</span> <span class="dark-red" >+ emails</span><span class="dark-blue" >[0].from.name
+            tag : </span><span class="green" >"new-email"</span>
+          <span class="dark-blue" >&#125;);
+       &#125;)
+      );
+   &#125;
+&#125;);</span>
+<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'notificationclick',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-blue">) &#123;
+   if (</span><span class="dark-red" >event.</span><span class="dark-blue" >notification.tag == </span><span class="green" >'new-email'</span><span class="dark-blue" >) &#123;</span>
+      <span class="grey">// Предположим, что нужны все ресурсы для отображения страницы /inbox/,
+	      предварительно закэшированной, как часть обработки установки .</span>
+      <span class="dark-blue" >new</span> <span class="purple" >WindowClient(</span><span class="green" >'/inbox/'</span><span class="dark-blue" >);
+   &#125;
+&#125;);</span></pre>
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="background" pwa-query-selector>При фоновой синхронизации.</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/cm-on-bg-sync.png">
+			</div>
+			<p>Фоновая синхронизация (Background sync) - функция в распоряжении сервисного рабочего, позволяющая отложить действия до появления стабильной сети, запрашивая синхронизацию серверных данных в автономном режиме или во временном диапазоне, что необходимо при передачи важных данных, требующих уверенной отправки. Эта синхронизация происходит даже при закрытом приложении. На эту функциональность запрашивается разрешение у пользователя. Хорошо подходит для не срочных, регулярных обновлений, сообщений социальных сетей, новости и т.д. </p>
+			<pwa-example-code [context]="{header : 'Загрузка кэша при фоновой синхронизации', ext : 'sw.js'}"><pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'sync',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-blue" >) &#123;
+   if (</span><span class="dark-red" >event.</span><span class="dark-blue" >id == </span><span class="green" >'update-leaderboard'</span><span class="dark-blue" >) &#123; </span>
+      <span class="dark-red" >event.</span><span class="dark-blue" >waitUntil( </span>
+         <span class="purple" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'mygame-dynamic'</span><span class="dark-blue" >).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >cache</span><span class="dark-blue" >) &#123;
+           return </span><span class="dark-red" >cache.</span><span class="dark-blue" >add(</span><span class="green" >'/leaderboard.json'</span><span class="dark-blue" >);
+       &#125;)
+     );
+   &#125;
+&#125;);</span></pre>
+			</pwa-example-code>
+		</li>
+	</ul>
+	<h5 id="persistence" pwa-query-selector>Сохранение кэша.</h5>
+	<p>Для каждого устройства, выделяется определенное количество пространства жесткого диска для хранилищ информации. Это область разделяется между всеми областями хранения : <span class="dark-blue">LocalStorage, IndexedDB, Filesystem, Caches</span>. Выделяемое количество для каждой области не определено и зависит от устройства и условий хранения. Однако, можно узнать какой объем памяти (квота) выделяется на устройсте:  </p>
+	<pwa-example-code [context]="{header : 'Информация о временной области хранения', ext : 'app.js'}"><pre><span class="purple" >navigator.</span><span class="dark-blue" >storageQuota.queryInfo(</span><span class="green" >"temporary"</span><span class="dark-blue" >)
+    .then(</span><span class="dark-sky" >function(</span><span class="dark-red" >info</span><span class="dark-sky" >) &#123;</span>
+        <span class="grey">// Результат: вся квота в битах</span>
+       <span class="dark-blue" >console.log(</span><span class="dark-red" >info.</span><span class="dark-blue" >quota);</span>
+       <span  class="grey" >//Результат : использующаяся область памяти в битах</span>
+       <span class="dark-blue" >console.log(</span><span class="dark-red" >info.</span><span class="dark-blue" >usage); </span>
+   <span class="dark-blue" >&#125;);</span></pre></pwa-example-code>
+	<p>Однако, как и по всему браузерному хранилищу, браузер способен очищать кэш, когда устройство начинает превышать выделенную квоту для хранения и он не в состоянии определить различия между нужными данными, которые нужно сохранить и данными, которые нужно удалить. Для решения проблемы используются <a target="_blank" href="https://storage.spec.whatwg.org/#introduction"> requestPersistent API</a>, при условии получения разрешения пользователя. Разделение информации на части информационного потока дает возможность контролировать удаления этих частей браузером. И если устройство превышает квоту хранения и отчистка не существенных данных не помогает отчистить кэш, пользователю предлагается самому решить, какие данные следует удалить, а какие сохранить.</p>
+	<pwa-example-code [context]="{header : 'Использование requestPersistent API', ext : 'app.js'}"><pre>
+<span class="grey">// На странице:</span>
+<span class="purple" >navigator.</span><span class="dark-blue" >storage.requestPersistent().then(</span><span class="dark-sky" >function(</span><span class="dark-red" >granted</span><span class="dark-blue" >) &#123;
+    if (</span><span class="dark-red" >granted</span><span class=" dark-blue" >) &#123;</span>
+      <span class="grey">// Здесь находятся сохраняемые данные</span>
+    <span class="dark-blue" >&#125;
+&#125;);</span></pre></pwa-example-code>
+	<h5 id="strategy" pwa-query-selector>Стратегии кэширования.</h5>
+	<p>Не важно, сколько данных кэширует приложение, важно когда и как оно это делает, и этого не произойдет, если разработчик не определит стратегии кэширования для сервисного рабочего.</p>
+	<ul>
+		<li>
+			<h5 id="cacheOnly" pwa-query-selector>Только кэш (Cache only)</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/ss-cache-only.png">
+			</div>
+			<p>Все запросы сервисный рабочий обрабатывает через кэш. Хорошо подходит для всего, что считается статической версией сайта. Происходит в обработчике события установки сервисного рабочего.</p>
+			<pwa-example-code [context]="{header : 'Только кэш', ext : 'sw.js'}"><pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+    <span class="grey">// Если на запрос нет данных в кэше, запрос считается ошибкой соединения</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >respondWith(</span><span class="purple" >caches</span><span class="dark-blue" >.match(</span><span class="dark-red" >event.</span><span class="dark-blue" >request));
+&#125;);</span></pre>
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="webOnly" pwa-query-selector>Только сеть (Network only)</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/ss-network-only.png">
+			</div>
+			<p>Страница запрашивает данные через сервисного рабочего только из сети. Подходит для ресурсов не загруженных в кэш, и не использующихся в автономном режиме (GET запросы, аналитика). Используется не часто.</p>
+			<pwa-example-code [context]="{header : 'Только сеть', ext : 'sw.js'}"><pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >respondWith(fetch(</span><span class="dark-red" >event.</span><span class="dark-blue" >request));</span>
+    <span class="grey">// или не вызывать этот метод вовсе, потому,
+	    //что этот метод вызовется браузером по умолчанию</span>
+<span class="dark-blue" >&#125;);</span></pre>
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="cacheFirst" pwa-query-selector>Сначала кэш, иначе сеть.</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/ss-falling-back-to-network.png">
+			</div>
+			<p>Сначала запрос направляется в кэш, в котором ишется ресурс. Если в кэше ресурса нет, запрос перенаправляется на сервер, загруженный ответ передается браузеру. Подходит для стратегий автономности приложения (сначала вне сети) <span class="dark-blue">offline-first</span>, это то, как обрабатываются большинство запросов. Поведение такого подхода сначала включает стратегию <span class="dark-blue" >Только кэш</span> для ресурсов, находящихся в кэше и <span class="dark-blue" >Только сеть</span> для всего остального (к примеру, не GET запросы, поскольку они не кэшируются). </p>
+			<pwa-example-code [context]="{header : 'Сначала кэш, иначе сеть', ext : 'sw.js'}"><pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-blue" >) &#123;</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >respondWith(</span>
+        <span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="dark-red" >event.</span><span class="dark-blue" >request).then(function(</span><span class="dark-red" >response</span><span class="dark-blue" >) &#123;
+            return </span><span class="dark-red" >response </span> <span class="purple" >|| fetch(</span><span class="dark-red" >event.</span><span class="dark-blue" >request);
+     &#125;)
+   );
+&#125;);</span></pre>
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="webFirst" pwa-query-selector>Сначала сеть, иначе кэш.</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/ss-network-falling-back-to-cache.png">
+			</div>
+			<p>Эта стратегия позволяет содержать приложению самую последнюю версию ресурсов, но пользователи автономного приложения (вне сети) получают старую, кэшированную версию. Сначала запрос направляется в сеть, при неудаче переходит в кэш. Если у пользователя прерывистое интернет соединение, он должен будет ожидать пока запрос на сервер окажется не успешным до получения преемлемого содержимого из кэша, что может занять некоторое время. Подходит для часто обновляемых ресурсов.</p>
+			<pwa-example-code [context]="{header : 'Сначала сеть, иначе кэш', ext : 'sw.js'}"><pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-blue" >) &#123;</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >respondWith(
+        fetch(</span><span class="dark-red" >event.</span><span class="dark-blue" >request).catch(function() &#123;
+            return </span> <span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="dark-red" >event.</span><span class="dark-blue" >request);
+        &#125;)
+    );
+&#125;);</span></pre>
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="cacheOrWeb" pwa-query-selector>Или кэш или сеть.</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/ss-cache-and-network-race.png">
+			</div>
+			<p>Подходит для маленьких ресурсов, с низкой производительность кэширования на жесткий диск. Случай для старых жестких дисков, сканеров вирусов и быстрых сетевых соединений. Получение ресурсов из сети может быть быстрее чем с диска, но обращение в сеть, когда ресурс есть на устройстве - расточительство.   </p>
+			<pwa-example-code [context]="{header : 'Кэш и сеть', ext : 'sw.js'}"><pre><span class="dark-sky" >function </span><span class="dark-blue" >promiseAny(</span><span class="dark-red" >promises</span><span class="dark-blue" >) &#123;
+    return new </span><span class="purple" >Promise</span><span class="dark-blue" >((resolve, reject) => &#123;</span>
+        <span class="grey">// убедимся, что в массиве все промисы</span>
+        <span class="dark-blue" >promises = </span><span class="dark-red" >promises.</span><span class="dark-blue" >map(p => </span><span class="purple" >Promise.</span><span class="dark-blue" >resolve(p));</span>
+        <span class="grey">//разрешить основной промис, промисом, сработавшим быстрее</span>
+        <span class="dark-blue" >promises.forEach(p => p.then(resolve));</span>
+        <span class="grey">// отказать, если все промисы отказаны</span>
+        <span class="dark-blue" >promises.reduce((</span><span class="dark-red" >a, b</span><span class="dark-blue" >) => </span><span class="dark-red" >a.</span><span class="dark-blue" >catch(() => </span><span class="dark-red" >b</span><span class="dark-blue" >))
+           .catch(() => reject(</span><span class="purple" >Error(</span><span class="green" >"Все неудачны"</span><span class="dark-blue" >)));
+      &#125;);
+&#125;;</span>
+<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-blue" >) &#123;</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >respondWith(
+        promiseAny([</span>
+           <span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="dark-red" >event.</span><span class="dark-blue" >request),
+           fetch(</span><span class="dark-red" >event.</span><span class="dark-blue" >request)
+       ])
+    );
+&#125;); </span></pre>
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="cacheThenWeb" pwa-query-selector>Кэш, потом сеть.</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/ss-cache-then-network.png">
+			</div>
+			<p>Эта стратегия создает два запроса, один в кэш, а другой в сеть. Идея состоит в том, что бы сначала отобразить данные из кэша, затем обновить страницу, если сетевой запрос будет успешным. Подходит для часто обновляемого содержимого.</p>
+			<pwa-example-code [context]="{header : 'Кэш, потом сеть', ext : 'app.js'}"><pre><span class="dark-blue" >var networkDataReceived = </span><span class="purple" >false;</span>
+<span class="grey">//Запустили индикатор прогресса</span>
+<span class="dark-blue" >startSpinner();</span>
+<span class="grey">//Получаем свежие данные </span>
+<span class="dark-blue" >var networkUpdate = </span><span class="purple" >fetch(</span><span class="green" >'/data.json'</span><span class="dark-blue" >).then(function(</span><span class="dark-red" >response</span><span class="dark-blue" >) &#123;
+    return </span><span class="dark-red" >response.</span><span class="dark-blue" >json();
+&#125;).then(function(</span><span class="dark-red" >data</span><span class="dark-blue" >) &#123;
+    networkDataReceived = </span><span class="purple" >true;</span>
+    <span class="dark-blue" >updatePage(</span><span class="dark-red" >data</span><span class="dark-blue" >);
+&#125;);</span>
+<span class="grey">// Получим кэшированные данные</span>
+<span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="green" >'/data.json'</span><span class="dark-blue" >).then(function(</span><span class="dark-red" >response</span><span class="dark-blue" >) &#123;
+    if (!</span><span class="dark-red" >response</span><span class="dark-blue" >) throw </span><span class="purple" >Error(</span><span class="green" >"Нет данных"</span><span class="dark-blue" >);
+    return </span><span class="dark-red" >response</span><span class="dark-blue" >.json();
+&#125;).then(function(</span><span class="dark-red" >data</span><span class="dark-blue" >) &#123;</span>
+    <span class="grey">// Не переписываем новые данные</span>
+    <span class="dark-blue" >if (!networkDataReceived) &#123;
+    updatePage(</span><span class="dark-red" >data</span><span class="dark-blue" >);
+   &#125;
+&#125;).catch(</span><span class="dark-sky" >function() &#123;</span>
+    <span class="grey">// Не получили кэшированные данные, надеемся на сеть</span>
+    <span class="dark-blue" >return networkUpdate;
+&#125;).catch(showErrorMessage).then(stopSpinner);</span><span class="grey">//Показали сообщение об ошибке,
+остановили индикатор прогресса.</span></pre>
+</pwa-example-code>
+<p>Код сервисного рабочего. Всегда проходит в сеть и по ходу обновляет кэш</p>
+<pwa-example-code [context]="{header : 'Кэш, потом сеть', ext : 'sw.js'}"><pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >respondWith( </span>
+        <span class="purple" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'mysite-dynamic'</span><span class="dark-blue" >).then(function(</span><span class="dark-red" >cache</span><span class="dark-blue" >) &#123;
+            return fetch(</span><span class="dark-red" >event.</span><span class="dark-blue" >request).then(</span> function(<span class="dark-red">response</span><span class="dark-blue" >) &#123;</span>
+                   <span class="dark-red" >cache.</span><span class="dark-blue" >put(</span><span class="dark-red" >event.</span><span class="dark-blue" >request, </span><span class="dark-red" >response.</span><span class="dark-blue" >clone());
+                   return </span><span class="dark-red" >response;</span>
+                 <span class="dark-blue" >&#125;);
+           &#125;)
+       );
+&#125;);</span></pre></pwa-example-code>
+		</li>
+		<li>
+			<h5 id="generic" pwa-query-selector>Общий резерв</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/ss-generic-fallback.png">
+			</div>
+			<p>Если запрос из кэша или из сети оказывается неудачным, можно предесмотреть общей ресурс для ответа на эти неудачные запросы. Подходит для вторичных изображений, неудачных запросов <span class="dark-blue">POST</span>, к примеру, для отображения страницы "Недоступно в автономном режиме". Если страница отправляет <span class="dark-blue">email</span>, сервисный рабочий может откатиться для сохранения сообщения в <span class="dark-blue">IndexedDB</span>, а ответ позволяет странице узнать, что отправка неудачна, а данные успешно сохранены.  </p>
+			<pwa-example-code [context]="{header : 'Общий откат', ext : 'sw.js'}"><pre><span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-blue" >function(</span><span class="dark-red" >event</span><span class="dark-blue" >) &#123;</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >respondWith(</span>
+    <span class="grey">// Идем в кэш</span>
+        <span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="dark-red" >event.</span><span class="dark-blue" >request).then(function(</span><span class="dark-red" >response</span><span class="dark-blue" >) &#123;</span>
+           <span class="grey">// Откат в сеть</span>
+            <span class="dark-blue" >return </span><span class="dark-red" >response</span><span class="dark-blue" >|| fetch(</span><span class="dark-red" >event.</span><span class="dark-blue" >request);
+        &#125;).catch(function() &#123;</span>
+            <span class="grey">// Если оба запроса неудачны, используем общий откат</span>
+            <span class="dark-blue" >return </span><span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="green" >'/offline.html'</span><span class="dark-blue" >);
+     &#125;)
+   );
+&#125;);</span></pre>
+			</pwa-example-code>
+		</li>
+		<li>
+			<h5 id="templating" pwa-query-selector>Сторонняя шаблонизация</h5>
+			<div class="containerPageImg">
+				<img  class="pageImg"  src="assets/icons/offline-cookbook/ss-sw-side-templating.png">
+			</div>
+			<p>Визуализация страниц на сервере значительно все ускоряет, но это означает включение в запрос данных состояния, которые не имеют большого смысла в кэше. Если страница контролируется сервисным рабочим, можно выбрать ответ формата <span class="dark-blue">JSON</span> вместе с шаблоном, и уже визуализировать его. </p>
+			<pwa-example-code [context]="{header : 'Сторонняя шаблонизация', ext : 'sw.js'}"><pre><span class="purple" >importScripts(</span><span class="green" >'templating-engine.js'</span><span class="dark-blue" >);</span>
+  <span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-sky" >function(</span><span class="dark-red" >event</span><span class="dark-blue" >) &#123;
+    var requestURL = new </span><span class="purple" >URL(</span><span class="dark-red" >event.</span><span class="dark-blue" >request.url);</span>
+    <span class="dark-red" >event.</span><span class="dark-blue" >respondWith(</span>
+        <span class="purple" >Promise.</span><span class="dark-blue" >all([</span>
+            <span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="green" >'/article-template.html'</span><span class="dark-blue" >).then(function(</span><span class="dark-red" >response</span><span class="dark-blue" >) &#123;
+                return </span><span class="dark-red" >response.</span><span class="dark-blue" >text();
+          &#125;),</span>
+            <span class="purple" >caches.</span><span class="dark-blue" >match(requestURL.path + </span><span class="green" >'.json'</span><span class="dark-blue" >).then(function(</span><span class="dark-red" >response</span><span class="dark-blue" >) &#123;
+                return </span><span class="dark-red" >response.</span><span class="dark-blue" >json();
+         &#125;)
+      ]).then(function(</span><span class="dark-red" >responses</span><span class="dark-blue" >) &#123;
+           var template = </span><span class="dark-red" >responses</span><span class="dark-blue" >[0];
+           var data = </span><span class="dark-red" >responses</span><span class="dark-blue" >[1];
+           return new </span><span class="purple" >Response(</span><span class="dark-sky" >renderTemplate(</span><span class="dark-blue" >template, data), &#123;</span>
+              <span class="brown" >headers : &#123; </span>
+                 <span class="green" >'Content-Type' : 'text/html'</span>
+             <span class="dark-blue" >&#125;
+        &#125;);
+     &#125;)
+  );
+&#125;);</span></pre>
+			</pwa-example-code>
+		</li>
+	</ul>
+
+</mat-card>

@@ -1,0 +1,118 @@
+<mat-card  class="pwa-page">
+	<h4 id="appShell" pwa-query-selector>Оболочка приложения.</h4>
+	<p>Оболочка прилодения - единственная архитектура построения прогрессивных веб приложений, надежно и быстро загружающаяся и отображающая интерфейс пользователю, подобно нативным приложения.<br>
+		Это тот минимум ресурсов / активов (HTML, CSS, JS и пр.), необходимый для запуска интерфейса приложения, используя их кэширование, что является залогом отличной стартовой производительности приложения при повторном посещении пользователем. Так происходит потому, что приложение не загружается каждый раз с сервера, а использует кэш приложения, обращаясь к сети только для загрузки данных для наполнения ими оболочки приложения. И при дальнейшей активности пользователя, загразка данных для активных страниц производиться из сети, динамически.</p>
+	<img class="appShellImg" src="assets/icons/shell/appshell-1.jpg">
+	<h5>Когда использовать оболочку приложения?</h5>
+	<p>Построение прогрессивных веб приложений не происходит с чистого листа, и если разработчик строит современное одностраничное приложение, вероятно он использует, что-то наподобие оболочки приложения, детали которой могут варьироваться от используемых библиотек (фреймворков), но концепция остается прежней. Концепция оболочки приложения имеет больше смысла для приложения или сайтов с относительно неизменной (не динамической) навигацией, но с динамическим контентом. Многие современные фреймворки уже поддерживают разделения логику приложения от содержимого (данных), делая архитектуру приложения более простой в использовании. Подобный подход можно использовать для сайтов, имеющих статический контент.</p>
+	<h5 id="advantages" pwa-query-selector>Преимущества.</h5>
+	<p>Преимущества архитектуры приложения, имеющего оболочку с сервисным рабочим (service worker):</p>
+	<ul>
+		<li><span class="dark-blue">Хорошая производительность</span> - повторное посещение сайта, заставляет его загрузиться из кэша, что происходит очень быстро, поскольку оболочка приложения уже находиться в кэше браузера. Статические ресурсы могут быть загружены и при первом вызове, но обычно загружаются динамически, по мере интерактивности пользователя.</li>
+		<li><span class="dark-blue">Нативное взаимодействие</span> - принимая такую модель приложения, можно создать впечатляющие ощущения у пользователя, заставляя приложение мгновенно реагировать, создавая отличную навигацию при интерактивности, использовать ресурсы при отсутствии сети. </li>
+		<li><span class="dark-blue">Экономичное использование данных</span> - такая архитектура позволяет управлять кэшированием загрузки как данных, так и файлов, применяя различные стратегии кэширования, позволяя браузеру загружать не все подряд, а выборочно, тем самым снижая трафик и стоимость данных.</li>
+	</ul>
+	<h5 id="requirements" pwa-query-selector>Требования к оболочки приложения.</h5>
+	<ul>
+		<li>Быстрая загрузка.</li>
+		<li>Загрузка только необходимых данных.</li>
+		<li>Использовать статические ресурсы из локального кэша приложения.</li>
+		<li>Разделять содержимое и навигацию.</li>
+		<li>Получать и отображать контент только специфичный для отображаемой страницы.</li>
+		<li>Кэшировать динамический контент</li>
+	</ul>
+	<p>Оболочка приложения хранится локально и получает контент динамически через различные <span class="dark-blue">API</span>. При повторном посещении приложения последняя версия загрузиться автоматически. </p>
+	<h5 id="createAppShell" pwa-query-selector>Создание оболочки приложения.</h5>
+	<p>Структура оболочки должна предпологать четкое разделение между ресурсами самой оболочки и динамического контента. Обычно загружается простая оболочка с данными, необходимыми для построения элементов диалога, меню, кнопок и пр. и определение необходимого баланса между скоростью и обновляемостью данных для каждого источника данных, находиться в компетенции разработчика.</p>
+	<img class="appShellImg" src="assets/icons/shell/wikipedia.jpg">
+	<h6 >Пример оболочки приложения.</h6>
+	<p>Этот пример разделяет оболочку приложения от данных. Очень важно сохранять самую простую первоначальную загрузку отображения только страничной компоновки и её интерфейса, до открытия приложения. Распологается она в файле <span class="dark-blue">index.html</span>, и является встроенной <span class="dark-blue">DOM</span> , а все остальное будет загружено позже, через через сторонние скрипты и таблицы стилей. Вся структура пользовательского интерфейса загружается через сервисного рабочего (<span class="dark-blue">Service Worker</span> ), и при последующих загрузках будут получены только новые или кэшированные данные, вместо загрузки всего подряд. Пример файла оболочки расположен в корневой директории сайта и является подмножеством настоящего содержимого, упрощенного файла <span class="dark-blue">html</span> и он содержит:</p>
+	<ul>
+		<li><span class="dark-blue">HTML, CSS </span> для оболочки приложения пользовательского интерфейса, дополненный навигацией и метками заполнителями контента. </li>
+		<li>Внешний <span class="dark-blue">JavaScript</span> файл (app.js) для обработки навигации пользовательского интерфейса, а так же кода для отображения постов, получаемых с сервера, и сохраняемых локально, используя механизм хранения, подобный <span class="dark-blue">IndexedDb</span> </li>
+		<li>Загрузку файла манифеста <span class="dark-blue">manifest.json</span> и загрузчик для сервисного рабочего, позволяющие использовать возможности работы в отсутствие сети. </li>
+	</ul>
+	<pwa-example-code [context]="{header : 'Пример оболочки приложения', ext : 'index.html'}">
+<pre><span class="purple" >&#60;!DOCTYPE&#62;</span>
+<span class="purple" >&#60;html&#62;</span>
+<span class="purple" >&#60;head&#62;</span>
+  <span class="purple" >&#60;meta</span> <span class="dark-blue" >charset=</span><span class="green" >"utf-8"</span><span class="purple" >&#62;</span>
+  <span class="purple" >&#60;title&#62;</span><span class="brown" >Оболочка приложения</span><span class="purple">/title&#62;</span>
+  <span class="purple" >&#60;link</span> <span class="dark-blue" >rel=</span><span class="green" >"manifest"</span> <span class="dark-blue" >href=</span><span class="green" >"/manifest.json"</span><span class="purple">&#62;</span>
+  <span class="purple" >&#60;meta</span> <span class="dark-blue" >http-equiv=</span><span class="green" >"X-UA-Compatible" content="IE=edge"</span><span class="purple">&#62;</span>
+  <span class="purple" >&#60;meta</span> <span class="dark-blue" >name=</span><span class="green" >"viewport"</span> <span class="dark-blue" >content=</span><span class="green">"width=device-width, initial-scale=1.0"</span><span class="purple">&#62;</span>
+  <span class="purple" >&#60;link</span> <span class="dark-blue" >rel=</span><span class="green" >"stylesheet"</span> <span class="dark-blue" >type=</span><span class="green" >"text/css"</span> <span class="dark-blue" >href=</span><span class="green" >"styles/inline.css"</span><span class="purple">&#62;</span>
+<span class="purple" >&#60;/head&#62;</span>
+  <span class="purple" >&#60;body&#62;</span>
+    <span class="purple" >&#60;header</span>  <span class="dark-blue" >class=</span><span class="green" >"header"</span><span class="purple">&#62;</span>
+      <span class="purple" >&#60;h1</span> <span class="dark-blue" >class=</span><span class="green" >"header__title"</span><span class="purple">&#62;</span><span class="brown" >Оболочка приложения</span><span class="purple">&#60;/h1&#62;</span>
+    <span class="purple" >&#60;/header&#62;</span>
+    <span class="purple" >&#60;nav</span> <span class="dark-blue" >class=</span><span class="green" >"nav"</span><span class="purple">&#62;</span>
+...
+    <span class="purple" >&#60;/nav&#62;</span>
+    <span class="purple" >&#60;main</span> <span class="dark-blue" >class=</span><span class="green" >"main"</span><span class="purple">&#62;</span>
+...
+    <span class="purple" >&#60;/main&#62;</span>
+    <span class="purple" >&#60;div</span> <span class="dark-blue" >class=</span><span class="green" >"dialog-container"</span><span class="purple">&#62;</span>
+...
+    <span class="purple" >&#60;/div&#62;</span>
+    <span class="purple" >&#60;div</span> <span class="dark-blue" >class=</span><span class="green" >"loader"</span><span class="purple">&#62;</span>
+    <span class="grey" >&#60;!-- отображается вращающийся индикатор загрузки --&#62;</span>
+    <span class="purple" >&#60;/div&#62;</span>
+    <span class="purple" >&#60;script</span> <span class="dark-blue" >src=</span><span class="green" >"app.js"</span> <span class="dark-blue" >async</span><span class="purple">&#60;/script&#62;</span>
+    <span class="purple" >&#60;script&#62;</span>
+      <span class="dark-blue" >if (</span><span class="green" >'serviceWorker'</span> <span class="dark-blue" >in navigator) &#123;</span>
+        <span class="dark-blue" >navigator.</span><span class="purple" >serviceWorker</span><span class="dark-blue" >.register(</span><span class="green" >'/sw.js'</span><span class="dark-blue" >).then(</span><span class="dark-sky" >function(</span><span class="dark-red">registration</span><span class="dark-blue" >) &#123; </span>
+        <span class="grey">// Регистрация успешна</span>
+          <span class="dark-blue" >console.log(</span><span class="green" >'Регистрация сервисного рабочего ушпешна в контексте: '</span><span class="dark-red" >, registration.</span><span class="dark-blue" >scope);
+&#125;).catch(</span><span class="dark-sky" >function(</span><span class="dark-red" >err</span><span class="dark-blue" >) &#123;</span>
+           <span class="grey">// Регистрация не удалась :(</span>
+            <span class="dark-blue" >console.log(</span><span class="green" >'Неудачная регистрация сервисного рабочего: '</span><span class="dark-red" >, err</span><span class="dark-blue" >);
+   &#125;);
+  &#125;</span>
+    <span class="purple" >&#60;/script&#62;</span>
+  <span class="purple" >&#60;/body&#62;</span>
+<span class="purple" >&#60;/html&#62;</span>
+</pre>
+	</pwa-example-code>
+	<p>Пример <a target="_blank" href="https://app-shell.appspot.com/">оболочки приложения</a>, использующее оболочку и визуализацию контента на сервере.</p>
+	<h4 id="appShellCache" pwa-query-selector>Кэширование оболочки приложения.</h4>
+	<p>Оболочка приложения может быть кэширована, используя сервисного рабочего написанного вручную, либо сгенерированного, используя инструмент предварительного кэширования <a target="_blank" href="https://github.com/GoogleChromeLabs/sw-precache">sw-precache</a>.</p>
+	<ul>
+		<li>Кэширование вручную. Ниже, представлен пример ручного кэширования файлов оболочки приложения в файле сервисного рабочего, используя <span class="dark-blue">Cash API</span> и событие <span class="dark-blue">install</span> сервисного рабочего.
+	
+	<pwa-example-code [context]="{header : 'Пример ручного кэширования', ext : 'sw.js'}"><pre><span class="purple" >var</span> <span class="dark-blue" >cacheName = </span><span class="green" >'shell-content'</span><span class="purple" >;
+var </span><span class="dark-blue" >filesToCache = [</span>
+  <span class="green" >'/css/styles.css'</span><span class="dark-blue" >,</span>
+  <span class="green" >'/js/scripts.js'</span><span class="dark-blue" >,</span>
+  <span class="green" >'/images/logo.svg'</span><span class="dark-blue" >,</span>
+  <span class="green" >'/offline.html’</span><span class="dark-blue" >,</span>
+  <span class="green" >'/’</span><span class="dark-blue" >,
+];
+self.</span><span class="purple" >addEventListener(</span><span class="green" >'install'</span><span class="dark-sky" >, function(</span><span class="dark-red" >e</span><span class="dark-blue" >) &#123;
+  console.log(</span><span class="green" >'Сервисный рабочий установлен'</span><span class="dark-blue" >);</span>
+  <span class="dark-red" >e.</span><span class="dark-blue" >waitUntil(
+    caches.</span><span class="purple" >open(</span><span class="dark-blue" >cacheName</span><span class="purple" >).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >cache</span><span class="dark-blue" >)) &#123;
+      console.log(</span><span class="green" >'Сервисный рабочий кэширует файлы оболочки'</span><span class="dark-blue" >);
+      return</span> <span class="dark-red" >cache.</span><span class="purple" >addAll(</span><span class="dark-blue" >filesToCache);
+    &#125;)
+  );
+&#125;); </span></pre>
+	</pwa-example-code>
+		 </li>
+		<li>Кэширование оболочки приложения, используя библиотеку <span class="dark-blue">sw-precache</span>. Здесь, сервисный рабочий генерируется библиотекой, кэширует ресурсы в кэш, согласно конфигурации кэширования, как части процесса компоновки, используя менеджер задач <span class="dark-blue">gulp</span>. Таким подходом можно предварительно кэшировать все файлы оболочки приложения, все будет работать в offline (при отсутствии сети) очень быстро, при последующих посещениях приложения.
+<pwa-example-code [context]="{header : 'Пример кэширования через библиотеку sw-precache', ext : 'gulp.js'}"><pre><span class="purple" >gulp.</span><span class="dark-blue" >task(</span><span class="green" >'generate-service-worker'</span><span class="dark-sky" >, function(</span><span class="dark-red" >callback</span><span class="dark-sky" >) &#123;</span>
+    <span class="purple" >var</span> <span class="dark-blue" >path = require(</span><span class="green" >'path'</span><span class="dark-blue" >);</span>
+    <span class="purple" >var</span> <span class="dark-blue" >swPrecache = require(</span><span class="green" >'sw-precache'</span><span class="dark-blue" >);</span>
+    <span class="purple" >var</span> <span class="dark-blue" >rootDir = </span><span class="green" >'app'</span><span class="dark-blue" >;
+    swPrecache.</span><span class="purple" >write</span><span class="dark-blue" >(path.</span><span class="purple" >join(</span><span class="dark-blue" >rootDir, </span><span class="green" >'service-worker.js'</span><span class="dark-blue" >), &#123;</span>
+      <span class="brown" >staticFileGlobs : </span><span class="dark-blue" >[rootDir + </span><span class="green" >'/**/*.&#123;js,html,css,png,jpg,gif&#125;'</span><span class="dark-blue" >],</span>
+      <span class="brown" >stripPrefix : </span><span class="dark-blue" >rootDir
+    &#125;, </span><span class="dark-red" >callback</span><span class="dark-blue">);
+&#125;);</span></pre>
+</pwa-example-code>
+			<a target="_blank" href="https://codelabs.developers.google.com/codelabs/sw-precache/index.html?index=..%2F..%2Findex#0">Полный пример</a><br>
+			Библиотека <span class="dark-blue">sw-precache</span> используется при кэшировании статических ресурсов (оболочка приложения, статические страницы). Для динамического кэширования (данные баз данных) рекомендуется использовать библиотеку <a target="_blank" href="https://github.com/GoogleChromeLabs/sw-toolbox">sw-toolbox</a> . Так же можно использовать более продвинутый инструмент автоматизации процесса настройки сервисного рабочего, объединяющего в себе эти две вышеупомянутые библиотеки - <a target="_blank" href="https://developers.google.com/web/tools/workbox/">workbox</a>, пример работы которого рассматривается в наборе примеров.
+		</li>
+	</ul>
+</mat-card>

@@ -22,6 +22,7 @@ import { RoutingProgressComponent } from './routingProgress/routingProgress.comp
 import { ExampleCodeTemplateComponent } from './exampleCodeTemplate/exampleCodeTemplate.component';
 //-------------------directives------------------------------------------
 import { QuerySelectorDirective } from './directives/query-selector/query-selector.directive';
+import { AttentionComponent } from './attention/attention.component';
 
 @NgModule({
     imports: [
@@ -44,8 +45,10 @@ import { QuerySelectorDirective } from './directives/query-selector/query-select
         ApiTableTemplateComponent,
         RoutingProgressComponent,
         ExampleCodeTemplateComponent,
+        AttentionComponent,
+
         //-------------directives------------------
-        QuerySelectorDirective
+        QuerySelectorDirective,
     ],
     exports : [
         GridTemplateComponent,
@@ -54,6 +57,8 @@ import { QuerySelectorDirective } from './directives/query-selector/query-select
         ApiTableTemplateComponent,
         RoutingProgressComponent,
         ExampleCodeTemplateComponent,
+        AttentionComponent,
+
         //------------directives-------------------
         QuerySelectorDirective
     ],

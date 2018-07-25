@@ -1,0 +1,10 @@
+.containerPageImg{
+    display: flex;
+    justify-content: center;
+}
+.pageImg{
+    flex: 1 1 70%;
+    max-width: 700px;
+    width: 70%;
+    height: 70%;
+}

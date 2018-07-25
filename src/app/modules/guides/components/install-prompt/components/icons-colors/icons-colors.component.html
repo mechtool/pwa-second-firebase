@@ -1,0 +1,57 @@
+<mat-card class="pwa-page">
+	<h4 id="icons-buttons" pwa-query-selector>Иконки и цвета браузера.</h4>
+	<p>Современные браузеры облегчают настройку определенных компонентов, таких как иконки, цвета адресной строки и даже пользовательских плиток. Эти простые настройки могут повысить впечатление от вашего сайта и повлиять на возможность повторного посещения его пользователями. </p>
+	<h4 id="icons-tiles" pwa-query-selector>Представление иконок или плиток.</h4>
+	<p>Когда пользователь посещает ваш сайт, браузер пытается получить изображения из <span class="dark-blue">HTML</span>. Они могут появлятся во многих местах, включая закладки браузеров, недавние переходы к приложениям, и т.д. Предоставляя высококачественные изображения (иконки) делают ваш сайт наиболее узнаваемым, облегчая пользователям поиск вашего сайта. Для добавления иконок высокого разрешения с полной поддержкой для всех браузеров, необходимо добавить несколько тегов <span class="dark-blue">link / meta</span> в область тега <span class="dark-blue">head</span> на каждой станице. </p>
+	<pwa-example-code [context]="{header : 'Определение иконок для всех браузеров', ext : '.html'}"><pre><span class="grey" >&#60;!-- нужная иконка высокого разрешения --&#62;</span>
+<span class="purple" >&#60;link</span> <span class="dark-blue" >rel=</span><span class="green" >"icon"</span> <span class="dark-blue" >sizes=</span><span class="green" >"192x192"</span> <span class="dark-blue" >href=</span><span class="green" >"icon.png"</span><span class="purple">&#62;</span>
+<span class="grey" >&#60;!-- повторно используемая иконка в Safari --&#62;</span>
+<span class="purple" >&#60;link</span> <span class="dark-blue" >rel=</span><span class="green" >"apple-touch-icon"</span> <span class="dark-blue" >href=</span><span class="green" >"ios-icon.png"</span><span class="purple">&#62;</span>
+<span class="grey" >&#60;!-- несколько иконок для IE --&#62;</span>
+<span class="purple" >&#60;meta</span> <span class="dark-blue" >name=</span><span class="green" >"msapplication-square310x310logo"</span> <span class="dark-blue" >content=</span><span class="green" >"icon_largetile.png"</span><span class="purple">&#62;</span>
+</pre>
+	</pwa-example-code>
+	<h4 id="chrome-opera" pwa-query-selector>Chrome и Opera.</h4>
+	<p>Этибраузеры используют изображения расширения <span class="dark-blue">.png</span>, которые масштабируются в зависимости от размеров устройств. Для предотвращения автомасштабирования необходимо использовать атрибут <span class="dark-blue">sizes</span>, добавляя дополнительные размеры. Размеры изображений должны иметь основание 48px (24px, 48px, 96px, 144px, 192px).</p>
+	<h4 id="safari" pwa-query-selector>Safari.</h4>
+	<p>Этот браузер также использует элемент <span class="purple">link</span> с атрибутом <span class="dark-blue">apple-touch-icon</span>, для определение изображений. Так же, можно устанавливать явные размеры, определяя отдельные элементы для каждой иконки, предотвращая автоматическое масштабирование операционной системой.</p>
+	<pwa-example-code [context]="{header : 'Определение иконок для Safari', ext : '.html'}"><pre><span class="purple" >&#60;link</span> <span class="dark-blue" >rel=</span><span class="green" >"apple-touch-icon"</span> <span class="dark-blue" >href=</span><span class="green" >"touch-icon-iphone.png"</span><span class="purple">&#62;</span>
+<span class="purple" >&#60;link</span> <span class="dark-blue" >rel=</span><span class="green" >"apple-touch-icon"</span> <span class="dark-blue" >sizes=</span><span class="green" >"76x76"</span> <span class="dark-blue" >href=</span><span class="green" >"touch-icon-ipad.png"</span><span class="purple">&#62;</span>
+<span class="purple" >&#60;link</span> <span class="dark-blue" >rel=</span><span class="green" >"apple-touch-icon"</span> <span class="dark-blue" >sizes=</span><span class="green">"120x120"</span> <span class="dark-blue" >href=</span><span class="green" >"touch-icon-iphone-retina.png"</span><span class="purple">&#62;</span>
+<span class="purple" >&#60;link</span> <span class="dark-blue" >rel=</span><span class="green" >"apple-touch-icon"</span> <span class="dark-blue" >sizes=</span><span class="green" >"152x152"</span> <span class="dark-blue" >href=</span><span class="green" >"touch-icon-ipad-retina.png"</span><span class="purple">&#62;</span>
+</pre>
+	</pwa-example-code>
+	<h4 id="ei-wp" pwa-query-selector>Internet Explorer и Windows Phone.</h4>
+	<p>Домашний экран   Windows 8 поддерживает четыре различные компоновки для постоянных размеров изображений и ожидает наличия четырех иконок. Можно не использовать те мета теги, которые не поддерживает ваше приложение.</p>
+<pwa-example-code [context]="{header : 'Определение иконок для Safari', ext : '.html'}"><pre><span class="purple" >&#60;meta</span> <span class="dark-blue" >name=</span><span class="green" >"msapplication-square70x70logo"</span> <span class="dark-blue" >content=</span><span class="green" >"icon_smalltile.png"</span><span class="purple">&#62;</span>
+<span class="purple" >&#60;meta</span> <span class="dark-blue" >name=</span><span class="green" >"msapplication-square150x150logo"</span> <span class="dark-blue" >content=</span><span class="green" >"icon_mediumtile.png"</span><span class="purple">&#62;</span>
+<span class="purple" >&#60;meta</span> <span class="dark-blue" >name=</span><span class="green" >"msapplication-wide310x150logo"</span> <span class="dark-blue" >content=</span><span class="green" >"icon_widetile.png"</span><span class="purple">&#62;</span>
+</pre>
+</pwa-example-code>
+	<h4 id="colorItems" pwa-query-selector>Цветные элементы браузера.</h4>
+	<p>Используя различные мета-элементы, можно настраивать браузер и даже элементы платформы (устройства). Но нужно помнить, что некоторые из них могут работать только на определен <br>Chrome, Firefox OS, Safari, Internet Explorer и Opera Coast позволяют, используя различные мета теги, настроить элементы как браузера, так и платформы.</p>
+	<pwa-example-code [context]="{header : 'Различные метатеги для различных браузеров', ext : '.html'}"><pre><span class="grey">Метатег цветовой темы для Chrome, Firefox OS и Opera</span>
+<span class="purple" >&#60;meta</span> <span class="dark-blue" >name=</span><span class="green" >"theme-color"</span> <span class="dark-blue" >content=</span><span class="green" >"#4285f4"</span><span class="purple">&#62;</span>
+<span class="grey">Метатег стартового изображения Safari.
+По умолчанию этот браузер пустой экран занрузки и после нескольких загрузок отображает
+скриншот предыдущего состояния приложения.
+Для явного указания стартового экрана применяется следующий тег</span>
+<span class="purple" >&#60;link</span> <span class="dark-blue" >rel=</span><span class="green" >"apple-touch-startup-image"</span> <span class="dark-blue" >href=</span><span class="green" >"icon.png"</span><span class="purple">&#62;</span>
+<span class="grey">Метатег изменения внешнего вида панели статуса устройства, в атрибуте</span>
+<span class="dark-blue">content</span><span class="grey" >используется значение "black" вместо значения "black-translucent". </span>
+<span class="purple" >&#60;meta</span> <span class="dark-blue" >name=</span><span class="green" >"apple-mobile-web-app-status-bar-style"</span> <span class="dark-blue" >content=</span><span class="green" >"black"</span><span class="purple">&#62;</span> <span class="d-grey">*</span>
+</pre>
+	</pwa-example-code>
+	<h4 id="changeAppearance" pwa-query-selector>Изменения внешнего вида панели статуса</h4>
+	<p>Можно менять цвет панели статуса устройства, используя значения метатега либо <span class="dark-blue">black</span> либо <span class="dark-blue">black-translucent</span> (черный-прозрачный). Со второй настройкой панель статуса увеличивается, увеличивая панель приложения, вместо разделения на черную полосу панели статуса и панели приложения. (пример выше *) </p>
+	<div class="imgColorBar">
+		<figure class="transImg">
+			<img  src="assets/icons/icons-colors/status-bar-translucent.png">
+			<figcaption>Используется значение "black-translucent"</figcaption>
+		</figure>
+		<figure class="blackImg">
+			<img  src="assets/icons/icons-colors/status-bar-black.png">
+			<figcaption>Используется значение "black"</figcaption>
+		</figure>
+	</div>
+</mat-card>

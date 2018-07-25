@@ -1,18 +1,18 @@
 <div class="sideNavBlock">
 	<div class="zeroContainer ct" *ngFor="let item0 of menuItems" (click)="onClickMenu($event)">
-		<a class="menuItem" [ngClass]="[item0.className, item0.icon ? 'group' : '']" [routerLink]="item0.href" [routerLinkActive]="item0.activeClass">
+		<a class="menuItem" [ngClass]="[item0.className, item0.icon ? 'group' : '']" [routerLink]="item0.href" [routerLinkActive]="item0.activeClass" fragment="{{item0.fragment}}">
 			<span class="itemText">{{item0.text}}</span>
 			<mat-icon class="pwa-icon-menu" *ngIf="item0.icon" [svgIcon]="item0.icon" [attr.data-text]="item0.text"></mat-icon>
 		</a>
 		<ng-container *ngIf="item0.children">
 			<div class="firstContainer ct" *ngFor="let item1 of item0.children" [ngClass]="item1.className" (click)="onClickMenu($event)">
-				<a class="menuItem" [ngClass]="[item1.className, item1.icon ? 'group' : '']" [routerLink]="item1.href" [routerLinkActive]="item1.activeClass">
+				<a class="menuItem" [ngClass]="[item1.className, item1.icon ? 'group' : '']" [routerLink]="item1.href" [routerLinkActive]="item1.activeClass" fragment="{{item1.fragment}}">
 					<span class="itemText">{{item1.text}}</span>
 					<mat-icon class="pwa-icon-menu"  *ngIf="item1.icon" [svgIcon]="item1.icon" [attr.data-text]="item1.text"></mat-icon>
 				</a>
 				<ng-container *ngIf="item1.children">
 					<div class="secondContainer ct" *ngFor="let item2 of item1.children" [ngClass]="item2.className" (click)="onClickMenu($event)">
-						<a class="menuItem" [ngClass]="[item2.className, item2.icon ? 'group' : '']" [routerLink]="item2.href" [routerLinkActive]="item2.activeClass">
+						<a class="menuItem" [ngClass]="[item2.className, item2.icon ? 'group' : '']" [routerLink]="item2.href" [routerLinkActive]="item2.activeClass" fragment="{{item2.fragment}}">
 							<span class="itemText">{{item2.text}}</span>
 							<mat-icon class="pwa-icon-menu"  *ngIf="item2.icon" [svgIcon]="item2.icon" [attr.data-text]="item2.text"></mat-icon>
 						</a>

@@ -1,9 +1,9 @@
 <div class="appContainer">
 	<pwa-routing-progress></pwa-routing-progress>
 	<mat-toolbar class="appToolBar" color="primary" fxLayout="row" fxLayout.lt-sm="column">
-		<mat-toolbar-row class="appToolBarRow" fxFlexOrder="1" fxFlexOrder.lt-sm="2" fxFlex="140px" fxFlex.lt-sm="56px">
+		<mat-toolbar-row class="appToolBarRow" fxFlexOrder="1" fxFlexOrder.lt-sm="2" fxFlex="180px" fxFlex.lt-sm="56px">
 			<div class="buttonBlock" (click)="onClickButtons($event)">
-				<button mat-icon-button *ngFor="let button of toolbarButtons" [routerLink]="button.href" routerLinkActive="activeElement" matTooltip="{{button.tip}}" matTooltipClass="{{button.tipClassName}}">
+				<button mat-icon-button *ngFor="let button of toolbarButtons" [routerLink]="button.href" routerLinkActive="activeElement" matTooltip="{{button.tip}}" matTooltipClass="{{button.tipClassName}}" [disabled]="button.disable || false">
 					<mat-icon class="menuIcon" [svgIcon]="button.icon"  [ngClass]="button.className"  ></mat-icon>
 				</button>
 			</div>
@@ -14,7 +14,7 @@
 				<button class="format-color-button" mat-icon-button matTooltip="Темы" matTooltipClass="buttonTip">
 					<mat-icon svgIcon="format-color" class="format-color"></mat-icon>
 				</button>
-				<a class="logo-pwa" routerLink="/">
+				<a class="logo-pwa" routerLink="/start-page">
 					<img  src="../assets/icons/app-shell/pwa-blue.png">
 				</a>
 			</div>
@@ -22,9 +22,9 @@
 	</mat-toolbar>
 	<mat-sidenav-container  [ngStyle.lt-sm]="{height: 'calc(100% - 128px)'}" class="mainSideNav">
 		<mat-sidenav class="matSideDrawer" [opened]="openedSideNav" mode="side">
-			<pwa-sidenav [menuItems] ="menuItems"></pwa-sidenav>
+			<pwa-sidenav [menuItems] ="appMenu"></pwa-sidenav>
 		</mat-sidenav>
-		<mat-sidenav-content [@routerTransition]="getState(outlet)" >
+		<mat-sidenav-content #sideNavContent [@routerTransition]="getState(outlet)" (scroll)="routerService.processScroll()">
 			<router-outlet #outlet="outlet"></router-outlet>
 		</mat-sidenav-content>
 	</mat-sidenav-container>

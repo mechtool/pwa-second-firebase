@@ -1,0 +1,12 @@
+
+.lighthouseImg{
+    width: 100%;
+}
+.picturesBanners{
+    width: 100%;
+    position: relative;
+}
+.picturesBanners img{
+    position: relative;
+    width: 100%;
+}

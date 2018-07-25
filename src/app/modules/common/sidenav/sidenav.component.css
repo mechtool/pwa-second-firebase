@@ -18,6 +18,12 @@ div.ct{
 a.menuItem{
     border-bottom: 1px solid #dddddd;
 }
+.firstContainer a{
+    padding-left: 16px;
+}
+.secondContainer a{
+    padding-left: 32px;
+}
 
 a.menuItem:hover{
     background: #f4f4f4;

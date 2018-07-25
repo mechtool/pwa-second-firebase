@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { GridItem } from '../../services/mainAppService';
 import { CommunicationService } from '../../services/mainAppService';
 
 @Component({
@@ -17,6 +16,7 @@ export class GuidesComponent implements OnInit {
         {title : 'Техника Offline', icon : 'assets/icons/guidesIcons/offline.png',  link : '/guides/offline-cookbook', text : 'Поваренная книга Offline. Обзор того, как все работает в контексте прогрессивных веб приложений.'},
         {title : 'Сервисный рабочий', icon : 'assets/icons/guidesIcons/serviceWorker.png',  link : '/guides/service-worker', text : 'Файл сервисного рабочего, который загружается при первом посещении приложения, содержащий структуру и стратегию кэширования ресурсов.'},
         {title : 'Входящие оповещения', icon : 'assets/icons/guidesIcons/push.png',  link : '/guides/pn-introduction', text : 'Механизм общения сервера приложения и приложения на устройстве пользователя.'},
+        {title : 'Установка на устройство', icon : 'assets/icons/guidesIcons/app-install.png',  link : '/guides/install-prompt/icons-colors', text : 'Механизм установки иконки вызова приложения на устройство пользователя.'},
 
     ];
 

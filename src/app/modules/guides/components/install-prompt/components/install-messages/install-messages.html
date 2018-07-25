@@ -1,0 +1,187 @@
+<mat-card class="pwa-page">
+	<h4 id="installBanners" pwa-query-selector>Диалоги установки приложения.</h4>
+	<p>Существуют два типа диалогов установки иконки приложения: <span class="dark-blue">WEB</span> диалог для веб приложения, <span class="dark-blue">NATIVE</span> диалог установки нативного приложения. Они позволяют пользователю быстро добавить иконку на веб или <span class="dark-blue">native</span> приложения на домашний экран устройства без выхода из браузера. Технология установочного диалога иногда имеет аббревиатуру <span class="dark-blue">A2HS</span>.<br>
+	Для возможности добавления установочного диалога, необходимо в приложение добавить файл манифеста, с заполненными метаданными свойств приложения. Затем, Chrome использует данные свойства для отображения диалога перед добавлением приложения на домашний экран. Ниже, интерфейсы установочных диалогов для различных модификаци Chrome и способов вызова:</p>
+	<div class="picturesBanners" fxLayout="row" fxLayout.lt-md="column" fxLayoutAlign="space-between">
+		<div fxFlex="1 1 30%" class="a2hsBanner">
+			<p>A2HS баннер<br> до Chrome 68</p>
+			<img src="../../../../../../../assets/icons/install-messages/a2hs-banner-g.png">
+			<p>Отображается автоматически, если сайт удовлетворяет критериям (условиям) автоматического отображения данного диалога и сайт не вызывает метод <span class="dark-blue">preventDefault()</span> объекта события <span class="dark-blue">beforeinstallprompt</span> <br> или <br> Отображается при вызове метода <span class="dark-blue">prompt() </span> объекта события <span class="dark-blue">beforeinstallprompt</span>.</p>
+		</div>
+		<div fxFlex="1 1 30%" class="mini-infobar">
+			<p>Mini-infobar <br> Chrome68 и выше</p>
+			<img src="../../../../../../../assets/icons/install-messages/a2hs-infobar-g.png">
+		    <p>Отображается, когда сайт удовлетворяет условиям автоматического отображения. При отклонении установки пользователем не будет отображаться для этого домена около трех месяцев.<br> Отображается вне зависимости вызова метода <span class="dark-blue">preventDefault()</span> объекта события <span class="dark-blue">beforeinstallprompt</span>. Этот пользовательский интерфейс установки приложения на экран устройства будет удален, когда будет реализован интерфейс добавления приложения при помощи кнопки рядом со строкой адреса.  </p>
+		</div>
+		<div  fxFlex="1 1 30%" class="a2hsDialog">
+			<p>A2HS Диалог</p>
+			<img src="../../../../../../../assets/icons/install-messages/a2hs-dialog-g.png">
+			<p>Отображается при вызове метода <span class="dark-blue">prompt() </span> объекта события <span class="dark-blue">beforeinstallprompt</span><br>или<br>Отображается, когда пользователь кликает на <span class="dark-blue">mini-infobar</span><br>или<br>Отображается после нажатие на элемента <span class="d-green" >Добавить на домашний экран</span> из меню хрома во всех версиях Chrome.</p>
+		</div>
+	</div>
+	<h3 id="install-web" pwa-query-selector>Установка на домашний экран (тип WEB).</h3>
+	<p>Chrome автоматически запускает событие <span class="dark-blue">beforinstallprompt</span>, когда приложение отвечает следующим критериям :</p>
+	<ul>
+		<li>Веб приложение еще не установлено.</li>
+		<li>Пользователь взаимодействовал с доменом сайта не менее 30 секунд.</li>
+		<li>Файл манифеста имеет заполненными следущие свойствами:
+			<ul>
+				<li><span class="dark-blue">short_name</span> или <span class="dark-blue">name</span> - используется как имя приложения на домашнем экране.</li>
+				<li>В массиве <span class="dark-blue">icons</span> должны быть определены иконки со свойствами <span class="dark-blue">"sizes" : "192x192"</span> и <span class="dark-blue">512x512</span> </li>
+				<li><span class="dark-blue">start_url</span></li>
+				<li><span class="dark-blue">display</span> - должно содержать одно из следующих значений <span class="dark-blue">fullscreen, standalone, minimal-ui</span> </li>
+
+			</ul>
+		</li>
+		<li>Имеет зарегистрированный <span class="dark-blue">Service Worker</span> (сервисный рабочий)</li>
+		<li>Работает по протоколу <span class="dark-blue">HTTPS</span> (обязательно для использования сервисного рабочего)</li>
+	</ul>
+	<pwa-attention [context]="{icon : 'attention', color : '#0068d4', backgroundColor : '#d2e8ff'}">
+		<span class="headerAttention" style="font-weight: bold">Внимание! </span><span>Другие браузеры (отличные от Chrome) могут иметь свои критерии для запуска события. Проверяйте соответствующую документацию для браузеров <a target="_blank" href="https://docs.microsoft.com/en-us/microsoft-edge/progressive-web-apps#requirements">Edge</a>, <a target="_blank" href="https://developer.mozilla.org/en-US/Apps/Progressive/Add_to_home_screen#How_do_you_make_an_app_A2HS-ready">Firefox</a>, <a href="https://dev.opera.com/articles/installable-web-apps/">Opera</a>, <a target="_blank" href="https://samsunginter.net/docs/ambient-badging">Samsung</a>, <a target="_blank" href="https://plus.ucweb.com/docs/pwa/docs-en/zvrh56">US Browser</a>.</span>
+	</pwa-attention>
+	<p>Если манифест приложения включает свойства <span class="dark-blue">related_applications</span> и <span class="dark-blue">prefer_related_applications : true</span>, то будет отображена подсказка установки иконки приложения на экран типа <span class="dark-blue">native</span>.</p>
+	<pwa-attention [context]="{icon : 'attention', color : '#d4002f', backgroundColor : '#ffe4e9'}">
+		<span class="headerAttention" style="font-weight: bold">Внимание! </span><span>Начиная с версии Chrome 68 (бета в июле 2018), Chrome автоматически не отображает диалог установки на домашний экран. Для его отображения вызовите метод <span class="dark-blue" >prompt()</span> в событии <span class="dark-blue">beforeinstallprompt</span>. <a target="_blank" href="/">Подробнее...</a> </span>
+	</pwa-attention>
+	<p>Технология диалогов установки развивающаяся, поэтому критерии для применения этих диалогов могут меняться в будущем.</p>
+	<h3 id="show-dialog-block" pwa-query-selector>Отображение диалога установки иконки приложения на экран устройства.</h3>
+	<p>Для отображения диалога установки, разработчику нужно:</p>
+	<ul>
+		<li>Подписаться на событие <span class="dark-blue">beforinstallprompt</span>.</li>
+		<li>Оповестить пользователя о том, что ваше приложение может быть установлено при нажатии на кнопку или другого элемента, генерирующего событие пользовательского жеста. </li>
+		<li>Отобразить диалог, вызвав метод <span class="dark-blue">prompt()</span> на объекте события, полученного в параметре обработчика. </li>
+	</ul>
+	<h3 id="add-event" pwa-query-selector>Подписка на событие <span class="dark-blue">beforeinstallprompt</span>.</h3>
+	<p>Если критерии добавления иконки на экран устройства присутствуют, Chrome запустит событие <span class="dark-blue">beforeinstallprompt</span>, которое используется для определения возможности установки иконки приложения на экран устройства и вывода диалога принятия решения об установки. Когда это событие активируется, объект события, полученный в параметре обработчика сохраняется, а пользователю отображается интерфейс принятия решения. </p>
+	<pwa-example-code [context]="{header : 'Подписка на событие отображения диалога установки', ext : 'index.js'}">
+<pre>
+<span class="d-grey">//Объявление переменной в которой сохраним ссылку объекта события</span>
+<span class="dark-blue" >let deferredPrompt;</span>
+<span class="d-purple" >window.</span><span class="dark-blue" >addEventListener(</span><span class="d-green" >'beforeinstallprompt'</span><span class="dark-blue" >, (</span><span class="d-dark-red" >e</span><span class="d-dark-blue" >) => &#123; </span>
+    <span class="d-grey">//Предотвращаем автоматическое отображения диалога</span>
+    <span class="d-dark-red" >e</span><span class="dark-blue" >.preventDefault(); </span>
+    <span class="d-grey">//Сохраняем ссылку на объект события для доступа к нему позже</span>
+    <span class="dark-blue" >deferredPrompt = </span><span class="dark-red" >e</span><span class="dark-blue" >;
+&#125;);</span>
+</pre>
+	</pwa-example-code>
+	<h3 id="prompt-user" pwa-query-selector>Оповещение пользователя о возможности установить приложение.</h3>
+	<p>Наилудший способ оповестить пользователя о возможности установки приложения - добавить кнопку или иной элемент в пользовательский интерфейс. Не отображайте полностраничное оповещение или элементы, которые могут надоедать или назойливо отвлекать. В некоторых случаях можно сделать паузу перед отображением оповещения, чтобы грубо не прерывать работу пользователя. К примеру, если пользователь находиться в процессе проверке чего-либо или заполняет какую либо форму, или создает аккаунт. Позвольте ему завершить начатое. </p>
+	<pwa-example-code [context]="{header : 'Пример отображения оповещения', ext : 'index.js'}">
+<pre><span class="d-purple" >window.</span><span class="dark-blue" >addEventListener(</span><span class="d-green" >'beforeinstallprompt'</span> <span class="dark-blue" >, (</span><span class="dark-red" >e</span><span class="d-blue" >) =>&#123;  </span>
+      <span class="d-red">e.</span><span class="dark-blue" >preventDefault();
+      deferredPrompt = </span><span class="d-red" >e</span><span class="dark-blue" >;</span>
+      <span class="d-grey">//Отобразить пользовательский интерфейс оповещения</span>
+      <span class="dark-blue" >btnAdd</span><span class="d-purple" >.style.display = </span><span class="d-green" >'block'</span><span class="dark-blue" >;
+&#125; );  </span>
+</pre>
+	</pwa-example-code>
+	<h3 id="show-dialog-method" pwa-query-selector>Метод вызова диалога установки.</h3>
+	<p>Что бы диалог установки отобразился, необходимо вызвать метод <span class="dark-blue">prompt()</span> на предварительно сохраненном объекте события. Отобразиться модальное окно, запрашивающее пользователя о добавлении иконку приложения на рабочий экран. Вызов данного метода может выполниться только один раз, и если пользователь его отклонит, нужно будет подождать, пока событие <span class="dark-blue">beforeinstallprompt</span> не активизируется снова при следующей навигации на страницу приложения.</p>
+<pwa-example-code [context]="{header : 'Отображения диалога установки приложения.', ext : 'index.js'}">
+<pre><span class="d-purple" >btnAdd.</span><span class="dark-blue" >addEventListener(</span><span class="d-green" >'click'</span><span class="dark-blue" >, (</span><span class="dark-red" >e</span><span class="dark-blue" >) => &#123;   </span>
+	<span class="d-grey">//Скрываем интерфейс уведомления возможности установки приложения </span>
+	<span class="d-purple" >btnAdd.</span><span class="dark-blue" >style.display = </span><span class="d-green" >'none'</span><span class="d-grey" >;
+	// Отображаем диалог установки приложения</span>
+	<span class="dark-blue" >deferredPrompt.prompt();</span>
+	<span class="d-grey">//Ждем активации этого диалога пользователем</span>
+	<span class="dark-blue" >deferredPrompt.userChoice.then((</span><span class="dark-red" >choiceResult</span><span class="dark-blue" >) => &#123;
+	  </span><span class="d-grey">//Если решение положительное</span>
+	  <span class="dark-blue" >if (</span><span class="dark-red" >choiceResult.</span><span class="dark-blue" >outcome === </span><span class="d-green" >'accepted'</span><span class="dark-blue" >) &#123;
+	    console.log(</span><span class="d-green" >'Пользователь решил установить приложение'</span><span class="dark-blue" >);
+	  &#125; else &#123;
+	    console.log(</span><span class="d-green" >'Пользователь отказался от установки приложения'</span><span class="dark-blue" >);
+	  &#125;
+	  deferredPrompt = null;
+	&#125;);
+&#125;); </span>
+</pre>
+	</pwa-example-code>
+	<h3 id="install-success" pwa-query-selector>Определение удачной установки приложения</h3>
+	<p>Для определения удачной установки иконки приложения после принятия положительного решения в диалоге, необходимо подписаться на событие глобального контекста <span class="dark-blue">appinstalled</span>.</p>
+<pwa-example-code [context]="{header : 'Событие успешной установки иконки приложения', ext : 'index.js'}">
+<pre><span class="d-purple" >window.</span><span class="dark-blue" >addEventListener(</span><span class="d-green" >'appinstalled'</span><span class="d-blue" >, (</span><span class="d-green" >evt</span><span class="dark-blue" >) => &#123;
+	console.log(</span><span class="d-green" >'installed'</span><span class="d-blue" >);
+&#125;);</span>
+</pre>
+	</pwa-example-code>
+	<h3 id="app-start" pwa-query-selector>Определение запуска приложения с экрана устройства</h3>
+	<p><span class="dark-blue">display-mode</span> - медиа запрос в котором определяются стили в зависимости от того в каком режиме запущено приложение. Возможно применение в файлах <span class="dark-blue">CSS, JavaScript</span>. К примеру, для применения различных стелей фона приложения применяется условие медиазапроса, проверяющее запус приложения в режиме отдельного приложения.</p>
+	<pwa-example-code [context]="{header : 'Определение режима запуска приложения в медиазапросе', ext : '.css'}">
+<pre><span class="d-purple" >@media</span> <span class="dark-blue" >all and (display-mode: standalone) &#123;
+	body&#123;
+	  background-color : yellow;
+  &#125;
+&#125; </span>
+</pre>
+	</pwa-example-code>
+	<p> Тот же пример определения режима, но уже в javaScript файле.</p>
+	<pwa-example-code [context]="{header : 'Определения режима запуска в коде', ext : 'index.js'}">
+<pre><span class="dark-blue" >if (</span><span class="d-purple" >window.</span><span class="dark-blue" >matchMedia(</span><span class="d-green" >'(display-mode: standalone)'</span><span class="dark-blue" >).matches) &#123;
+	console.log(</span><span class="d-green" >'Режим запуска автономный'</span><span class="dark-blue" >);
+&#125; </span>
+</pre>
+	</pwa-example-code>
+	<p>Для определения режима запуска приложения в браузере <span class="dark-blue">Safari</span>, используется проверка в javascript: </p>
+<pwa-example-code [context]="{header : 'Определения режима запуска в коде', ext : 'index.js'}">
+<pre><span class="dark-blue" >if (</span><span class="d-purple" >window.</span><span class="dark-blue" >navigator.standalone === true) &#123;
+	console.log(</span><span class="d-green" >'Режим запуска автономный'</span><span class="dark-blue" >);
+&#125; </span>
+</pre>
+	</pwa-example-code>
+	<h3 id="update-icons" pwa-query-selector>Обновление иконок и имени приложения</h3>
+	<p>Если разработчик изменил значения свойств в файле манифеста, изменения вступят в силу после того как пользователь перезапустит приложение.</p>
+	<h3 id="test-adding" pwa-query-selector>Тестирование добавления иконки на экран устройства.</h3>
+	<p>Можно вручную запустить событие <span class="dark-blue">beforeinstallprompt</span> при помощи интструмента разработчика в Chrome (Dev Tool). Это делает возможным отследить пользовательский опыт, понять логику работы потока и его регулировку. Если приложение не соответствует критериям прогрессивных веб приложений, в консоль будет вброшено исключение и событие не запустится. </p>
+	<pwa-attention [context]="{icon : 'attention', color : '#d4002f', backgroundColor : '#ffe4e9'}">
+		<span class="headerAttention" style="font-weight: bold">Внимание! </span><span>Chrome имеет немного различные реализации потока установки в мобильных и настольных браузерах, однако, инструкции похожи, кроме того, что тестирование на мобильном браузере требует удаленной отладки, без которой, будет применяться установочный поток настольного браузера. </span>
+	</pwa-attention>
+	<h3>Chrome на Android</h3>
+	<ul>
+		<li>Открыть сессию <a target="_blank" href="https://developers.google.com/web/tools/chrome-devtools/remote-debugging/">удаленной отладки</a> на телефоне или планшете</li>
+		<li>Перейти в панель <span class="dark-blue">Application</span> </li>
+		<li>Перейти в закладку <span class="dark-blue">Manifest</span> </li>
+		<li>Нажать на <span class="dark-blue">Add to home screen</span> (добавить на домашний экран).</li>
+	</ul>
+	<h3>Chrome OS</h3>
+	<ul>
+		<li>Открыть <span class="dark-blue">Chrome Dev Tools</span> (инструменты разработчика)</li>
+		<li>Перейти в панель <span class="dark-blue">Application</span> (приложение).</li>
+		<li>Перейти в закладку <span class="dark-blue">Manifest</span> </li>
+		<li>Нажать на <span class="dark-blue">Add to home screen</span> (добавить на домашний экран).</li>
+	</ul>
+	<p>Самый простой способ протестировать запуск события <span class="dark-blue">beforeinstallprompt</span> - это использовать инструмент <a target="_blank" href="https://developers.google.com/web/tools/lighthouse/">Lighthouse</a> для полного аудита приложения и проверки его результатов его теста <a target="_blank" href="https://developers.google.com/web/tools/lighthouse/audits/install-prompt">User Can Be Prompted To Install The Web App</a> (пользователь может быть оповещен об установки приложения).</p>
+	<h3 id="native-prompt" pwa-query-selector>Диалоги установки нативных приложений.</h3>
+	<p>Такие диалоги дают возможность пользователям быстро и гладко устанавливань нативные приложения на устройства из хранилища приложений (app store), без необходимости покидания браузера.</p>
+	<h4>Условия отображения диалога.</h4>
+	<p>Chrome автоматически отобразит диалог пользователю, когда приложение будет соответствовать следующим условиям, похожим на условия для WEB приложений:</p>
+	<ul>
+		<li>Приложение еще не установлено на устройство.</li>
+		<li>Пользователь проявляет активность на странице приложения более 30 секунд.</li>
+		<li>В манифесте приложения установлены следующие свойства:
+			<ul>
+				<li>short_name</li>
+				<li>name (используется в тексте диалога)</li>
+				<li>icons - имеет значения для 192px и 512px пиксельных иконок</li>
+				<li><a target="_blank" href="https://developers.google.com/web/fundamentals/app-install-banners/native#prefer_related_applications">prefer_related_applications</a> - установлена в истину (true)</li>
+				<li><a target="_blank" href="https://developers.google.com/web/fundamentals/app-install-banners/native#prefer_related_applications">related_applications</a> - значение объекта содержит информацию о приложении.</li>
+				
+			</ul>
+		</li>
+		<li>Развернуто на сервере по безопасному протоколу <span class="d-dark-blue">HTTPS</span> </li>
+	</ul>
+	<p>Если сайт имеет ограничительную <a target="_blank" href="https://developers.google.com/web/fundamentals/security/csp/">Content Security Policy</a>, убедитесь в добавлении к директиван <span class="dark-blue">img-src</span> дополнительного идентификатора <span class="dark-blue">*.googleusercontent.com</span>, для того чтобы Chrome мог загрузить иконку ассоциированную с вашим приложением из <span class="dark-blue">Play Store</span>. </p>
+	<h3 id="required-properties" pwa-query-selector>Обязательные свойства манифеста.</h3>
+	<p>Что бы подсказать пользователю установить приложение, нужно добавить два свойства в файл манифеста <span class="dark-blue">prefer_related_applications</span> и <span class="dark-blue">related_applications</span> </p>
+	<pwa-example-code [context]="{header : 'Обязательные свойства в файле манифеста', ext : 'manifest.json'}"><pre><span class="d-green" >"prefer_related_applications" </span><span class="dark-blue" >: true,</span>
+  <span class="d-green" >"related_applications" </span><span class="dark-blue" >: [
+  &#123;</span>
+	<span class="d-green" >"platform" :  "play",
+	"id": "com.google.samples.apps.iosched"</span>
+  <span class="dark-blue" >&#125;
+] </span>
+</pre>
+	</pwa-example-code>
+	<p><span class="d-blue">prefer_related_applications</span> - это свойство указывает браузеру вывести диалог пользователю для установки нативного приложения, вместо веб приложения. Устанавливая это свойство в значение ложь, или не устанавливая его, заставит браузер установить веб приложение.<br>
+	<span class="dark-blue">related_applications</span> - массив со списком объектов, которые содержат информацию о нативном приложении. Каждый объект должен включать свойство <span class="dark-blue">platform</span> - имя платформы и <span class="dark-blue">id</span> - идентификатор приложения в этой платформе.</p>
+</mat-card>

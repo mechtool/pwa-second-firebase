@@ -15,7 +15,7 @@ import {MatIconModule, MatToolbarModule, MatSidenavModule, MatTooltipModule, Mat
 //----------------------app components---------------------------
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import {CommunicationService} from './services/mainAppService';
+import {CommunicationService, RouterService} from './services/mainAppService';
 
 
 @NgModule({
@@ -25,11 +25,12 @@ import {CommunicationService} from './services/mainAppService';
     imports: [
         BrowserModule,
         RouterModule,
-        AppRoutingModule,
         HttpClientModule,
         AppCommonModule,
         BrowserAnimationsModule,
         ServiceWorkerModule.register('/ngsw-worker.js', { enabled: environment.production }),
+        AppRoutingModule,
+
         //-------------material------------------------------------
         FlexLayoutModule,
         MatToolbarModule,
@@ -39,7 +40,10 @@ import {CommunicationService} from './services/mainAppService';
         MatTooltipModule,
         MatCardModule,
     ],
-    providers: [CommunicationService],
+    providers: [
+        CommunicationService,
+        RouterService
+        ],
     bootstrap: [AppComponent]
 })
 export class AppModule { }

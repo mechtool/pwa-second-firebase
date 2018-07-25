@@ -26,8 +26,6 @@ export class SidenavComponent{
                     height = parseInt(window.getComputedStyle(parent).height);
                     parent.style.height = (height + (current.classList.contains('active') ? (current.childElementCount - 1) * 48 : - (current.childElementCount - 1) * 48))+'px';
                 }
-
-
             }
         }
         event.stopPropagation();

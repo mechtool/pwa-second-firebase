@@ -1,0 +1,215 @@
+<mat-card style="margin: 16px" class="pwa-page">
+	<h4 id="introduction" pwa-query-selector>Сервисный рабочий. Введение.</h4>
+	<p>Работа приложения без интернета, периодическая серверная синхронизация, входящие оповещения - функциональность, которая обычно принадлежит нативным приложениям (приложениям, работающих в среде операционных систем), приходит в веб разработку. <span
+	class="dark-blue">Service Worker</span> (сервисный рабочий) обеспечивает техническую основу для всех этих функций. </p>
+	<p>Сервисный рабочий - это скрипт, запускающийся в браузере в фоновом режиме, отдельно от контекста приложения и его страниц, открывая дверь функциям, которые не нуждаются в веб страницах или пользовательской активности, и позволяюет выполнять функциональность <a target="_blank">входящих оповещений</a> и <a target="_blank">фоновой синхронизации</a>. Ключевые функции рассмотрены здесь, включая перехваты серверных запросов, програмное управление кэшированием ответов на эти запросы. Особенностями сервисного рабочего являются:</p>
+	<ul>
+		<li>Невозможность напрямую получить доступ к <span class="dark-blue">DOM</span>. Вместо этого, он может общаться со страницами, которые он обслуживает посредством сообщений, работающих через <a target="_blank" href="https://html.spec.whatwg.org/multipage/workers.html#dom-worker-postmessage">post message API</a>, а эти страницы, в свою очередь, при необходимости, могут манипулировать DOM. </li>
+		<li>Сервисный рабочий, по сути, является сетевым прокси, позволяющим разработчику контролировать сетевую коммуникацию контекста своего обслуживания.</li>
+		<li>Если очередь функций сервисного рабочего пуста, браузер отключает исполнение его скрипта, перезапуская при появлении сетевой активности, поэтому нельзя полагаться на глобальный статус сервисного рабочего в обработчиках <span class="dark-blue">onfetch</span> или <span class="dark-blue">onmessage</span>, и если необходимо сохранение информации, или повторное её использование между сессиями сервисного рабочего, её можно сохранить через <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API">IndexedDb API</a>. </li>
+		<li>Программный интерфейс сервисного рабочего активно использует тип данных <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>, поэтому, для понимания его работы нужно понимать этот тип данных.</li>
+		<li>Приложение, устанавливающее своего сервисного рабочего, должно работать по безопасному протоколу <span class="dark-blue">HTTPS</span> - необходимое условие работы сервисного рабочего.</li>
+	</ul>
+	<h5 id="life-circle" pwa-query-selector>Жизненный цикл сервисного рабочего.</h5>
+	<p>Описание : Жизненный цикл сервисного рабочего полностью отделен от страниц приложения и исполняется в собственном контексте. Для установки сервисного рабочего для сайта (приложения), его нужно зарегистрировать в браузере, что выполняется посредством небольщого скрипта с проверкой на поддержку браузером <span class="dark-blue">Service Worker API</span>. Регистрация запускает последовательность установочных событий в браузере. Обычно, в процессе шага установки происходит кэширование статических ресурсов приложения, его оболочки, и если все файлы кэшированны успешно (без сбоя), сервисный рабочий считается установленным. Если хотя бы один из файлов ресурсов кэширован не удачно, или в процессе кэширования произошла ошибка, процесс установки считается не успешным и сервисный рабочий не будет установлен и активирован. Это не приводит к обрушению скрипта, а попытка повториться при повторном обращении пользователя к приложению.<br>
+	При завершении шага установки, запускается шаг активации сервисного рабочего, что означает запуск скрипта нового сервисного рабочего и остановка скрипта старого сервисного рабочего, если сервисный рабочий обновлен разработчиком, отчистка или удаление старого кэша.<br>
+	После успешного шага активации, сервисный раьочий получает полный контроль над страницами приложения, находящимися в контексте ответсвенности этого сервисного рабочего. Однако страница, которая зарегистрировала сервисного рабочего, сможет им контролироваться только после перезагрузки.<br>
+	После шага активации, сервисный рабочий может входить в одну из двух стадий:</p>
+	<ul>
+		<li>Прослушивает и обрабатывает события <span class="dark-blue">fetch</span>, <span class="dark-blue">message</span>, возникающих на страницах, входящих в контекст ответственности сервисного рабочего.</li>
+		<li>Деактивации сервисного рабочего, если очередь событий контекста пуста, обрабатывать нечего и скрипт сервисного рабочего останавливается для экономии ресурсов памяти, но будет немедленно запущен при возникновении событий в контексте.</li>
+	</ul>
+	<p>Более подробная технологическая последовательность:</p>
+	<ul>
+		<li>Скрипт проверки поддержки функциональности регистрирует <span class="dark-blue">URL</span> сервисного рабочего по средствам метода <span class="dark-blue">serviceWorkerContainer.register(URL, options)</span>. Этот метод возвращает <span class="dark-blue">Promise</span>. </li>
+		<li>В нем сервисный рабочий получает доступ к своему контексту выполнения <span class="dark-blue">ServiceWorkerGlobalScope</span> - особенный тип основного контекста работы сервисного рабочего, исполняющийся отдельно от основного контекста приложения, не имеет доступа к модели <span class="dark-blue">DOM</span>, но способный общаться со скриптами приложения по средствам отправки и получения сообщений. На одном домене можно регистрировать несколько сервисных рабочих, но с разными контекстами ответственности. Здесь можно подписаться на события сервисного рабочего.</li>
+		<li>Первым таким событием, напрвленным к сервисному рабочему, является событие <span class="dark-blue">install</span> запуская обработчик <span class="dark-blue">oninstall</span>. Оно может быть использовано для кэширования оболочки приложения, запуска процесса заполнения базы данных <span class="dark-blue">IndexedDB</span>, загрузки и кэширования динамических данных, подготавливая приложение для его использования при отсутствии сети (offline). В обработчике этого события для приостановки процесса регистрации сервисного рабочего в пользу завершения загрузки и кэширования оболочки приложения и ресурсов используется метод объекта события <span class="dark-blue">event.waitUntil()</span>, возвращающий промис, разрешение которого является сигналом для завершения процесса регистрации. Пропустить процесс приостановки регистрации можно методом <span class="dark-blue">self.skipWaiting()</span> экземпляра сервисного рабочего, доступного в контексте скрипта регистрации, через переменную <span class="dark-blue">self</span>. Если процесс загрузки и кэширования ресурсов завершился без сбоев или ошибок, далее следует событие активации сервисного рабочего <span class="dark-blue">activate</span>. </li>
+		<li>Запускается обработчик события <span class="dark-blue">onactivate</span>, в котором так же можно отложить процесс активации в пользу отчистки устаревших ресурсов, кэшей. Здесь можно запустить метод <span class="dark-blue">self.clients.claim()</span>, который позволяет получить контроль над всеми скриптами, находящимися в контексте ответственности сервисного рабочего без необходимости их перезапуска. </li>
+		<li>После события активации, сервисный рабочий получает контроль над страницами, находящимися в контексте его ответственности, но только над теми, которые были открыты после успешной регистрации сервисного рабочего. Таким образом документы, входящие к контекст ответственности сервисного рабочего живут своей жизнью, и могут быть уже открыты в процессе регистрации нового сервисного рабочего, контролируясь старым сервисным рабочим. Для передачи контроля от одного сервисного рабочего к другому, страницы должны быть перезапущены в браузере, или должен быть запущен вышеуказанный метод, для явного принятия контроля над открытыми страницами новым сервисным рабочим.</li>
+		<li>Если очередь событий для обработки сервисным рабочим пуста, браузер деактивирует скрипт сервисного рабочего, а через некоторое время отключает его для экономии памяти, но если события обработки сервисным рабочим воникают вновь, он пробуждается для обработки этих событий, и цикл повторяется.</li>
+	</ul>
+	<p>Схематическая, упращенная последовательность процесса:</p>
+	<img class="lifeCycleImage" src="assets/sw-lifecycle.png">
+	<h4 id="browser-enter" pwa-query-selector>Ввод сервисного рабочего.</h4>
+	<p>Первый блок кода ввода в действие сервисного рабочего заключается в определении поддерживаемой функциональности браузера и регистрации сервисного рабочего. Этот код регистрирует сервисного рабочего, который работает в контексте сервисного рабочего и не имеет доступа к DOM. Один сервисный рабочий может контролировать множество страниц. Каждый раз, когда страница в контексте ответственности сервисного рабочего загружается в браузер, сервисный рабочий подключается к этой странице и прослушивает её сетевую активность, работая как сетевой прокси сервер, позволяя модифицировать сетевые запросы и ответы, предлагая их из кэша или заново загружая их с сервера. Браузеры, которые не поддерживают интерфейс сервисного рабочего, используют приложение как веб приложение, не имея возможности работать с ним в отсутствии сети. Если в скрипте регистрации используются <span class="dark-blue">APP Cache API</span> и <span class="dark-blue">SW API</span>, то браузер, не поддерживая второй, будет работать с первым, и будет игнорировать второй при поддержки первого. </p>
+	<pwa-example-code [context]="{header : 'Проверка функциональности и регистрация', ext : 'app.js'}">
+		<span class="dark-blue" >if (</span><span class="green" >'serviceWorker'</span> <span class="dark-blue" >in</span> <span class="purple" >navigator</span><span class="dark-blue" >) &#123;</span>
+			<span class="purple">navigator.</span><span class="dark-blue" >serviceWorker.register(</span><span class="green" >'/sw-test/sw.js'</span><span class="dark-blue" >, &#123;</span><span class="brown" >scope : </span><span class="green" >'/sw-test/'</span><span class="dark-blue" >&#125;)
+				.then(</span><span class="dark-sky" >function(</span><span class="dark-red" >reg</span><span class="dark-sky" >) &#123;</span>
+					<span class="grey">// регистрация рабочего успешна </span>
+					<span class="dark-blue" >console.log(</span><span class="green" >'Регистрация успешна, контекст :'</span> <span class="dark-blue" >+</span><span class="dark-red" >reg.</span><span class="dark-blue" >scope);
+				&#125;).catch(</span><span class="dark-sky" >function(</span><span class="dark-red" >error</span><span class="dark-blue" >) &#123;</span>
+					<span class="grey">// Регистрация неудачна </span>
+					<span class="dark-blue" >console.log(</span><span class="green" >'Регистрация завершилась с ошибкой : '</span><span class="dark-blue" >+</span> <span class="dark-red" >error</span><span class="dark-blue" >);
+				&#125;);
+			&#125;</span>
+	</pwa-example-code>
+	<ol>
+		<li>В условном оперраторе выполняется проверка на поддержку браузером интерфейса сервисного рабочего до начала его регистрации</li>
+		<li>Используем <span class="dark-blue"> ServiceWorkerContainer.register()</span> метод для регистрации сервисного рабочего для домена, который является JavaScript файлом, находящимся в папки <span class="dark-blue">sw-test</span>. URL к файлу сервисного рабочего является относительным корня сайта, а не файла регистрации.  </li>
+		<li>Параметр <span class="dark-blue">scope</span> необязательный, и используется для определения контекста ответственности сервисного рабочего, т.е. контекста в котором находятся файлы, активность которых будет прослущивать регистрируемый сервисный рабочий. В данном случае мы явно указывает папку контекста. Если оставить этот параметр не заполненным, контекстом ответственности будет являться папка в которой находиться файл сервисного рабочего, указанный в первом параметре. </li>
+		<li>Метод выше возвращает промис, на котором используем его метод <span class="dark-blue">.then()</span>, который можно сцеплять в цепочки последовательных действий, которые будут исполняться при разрешении промиса. </li>
+		<li>В конце цепочки применяется метод промиса <span class="dark-blue">.catch()</span>, на случай отказа промиса. </li>
+	</ol>
+	<h5 id="failures" pwa-query-selector>Причины отказов при регистрации сервисного рабочего</h5>
+	<ul>
+		<li>Приложение / сайт не работает по безопасному протоколу <span class="dark-blue">HTTPS</span>, за исключением <span class="dark-blue">localhost</span>. </li>
+		<li>URL к файлу сервисного рабочего не корректен - адрес должен быть абсолютным, или интерпретирован относительно корня приложения. К примеру, сервисный рабочий приложения находиться в URL <span class="dark-blue">https://mdn.github.io/sw-test/sw.js</span>, папкой приложения является <span class="dark-blue">https://mdn.github.io/sw-test/</span>, следовательно адрес файла сервисного рабочего указывается относительно корня домена как <span class="dark-blue">/sw-test/sw.js</span>, а не <span class="dark-red">/sw.js</span> </li>
+		<li>Файл сервисного рабочего находиться не в папке с индексным файлом приложения.</li>
+		<li>Помните :
+			<ul>
+				<li>Сервисный рабочий перехватывает сетевые запросы <span class="dark-red">ТОЛЬКО</span> тех страниц, которые находятся в контексте ответственности сервисного рабочего. </li>
+				<li>Максимальным контекстом (максимально вложенный контекст) сервисного рабочего является папка самого сервисного рабочего, не ниже.</li>
+				<li>Если сервисный рабочий работает и использует заголовок <span class="dark-blue">Service-Worker-Allowed</span>, его значение должно содержать значение контекста ответственности сервисного рабочего.  </li>
+				<li>В <span class="dark-blue">FireFox</span>  API сервисного рабочего скрыты и не используются в режиме <span class="dark-blue">private browsing mode</span>. </li>
+			</ul>
+		</li>
+	</ul>
+	<h5 id="install-active-cache" pwa-query-selector>Установка, активация и кэширование.</h5>
+	<p>После того, как сервисный рабочий зарегистрирован, браузер пытается его активировать для домена и активируется событие <span class="dark-blue">install</span>, запуская обработчик этого события, когда процесс устаноки завершился без ошибок. Это событие используется для кэширования оболочки приложения и его статических ресурсов,необходимых для работы приложения при отсутствии сети. Для этого используется <span class="dark-blue">Cache API</span> - доступны в контексте сервисного рабочего через глобальную переменную <span class="dark-blue">cache</span>, позволяющие сохранять ресурсы, пары запрос-ответ приложения в кэше приложения. Эти API работают также как и стандартный браузерный кэш, но специфичны для каждого домена и полностью управляемы разработчиком. <span class="dark-blue">Cache API</span> поддерживаются <a target="_blank" href="https://jakearchibald.github.io/isserviceworkerready/#caches">не всеми браузерами</a>, и если необходимо использовать их в неподдерживаемых браузерах, то используйте полифилы, или <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API">IndexedDB</a>.Ниже, пример файла сервисного рабочего, определяющий обработчик события и наполнение кеша приложения. </p>
+	<pwa-example-code [context]="{header : 'Установка обработчика и кэширование.', ext : 'sw.js'}">
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'install'</span><span class="dark-sky" >, function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+			<span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(</span>
+				<span class="dark-red" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'v1'</span><span class="dark-blue" >).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >cache</span><span class="dark-blue" >) &#123;
+					return </span><span class="dark-red" >cache.</span><span class="dark-blue" >addAll([ </span>
+						<span class="green" >'/sw-test/',
+						'/sw-test/index.html',
+						'/sw-test/style.css',
+						'/sw-test/app.js',
+						'/sw-test/image-list.js',
+						'/sw-test/star-wars-logo.jpg',
+						'/sw-test/gallery/',
+						'/sw-test/gallery/bountyHunters.jpg',
+						'/sw-test/gallery/myLittleVader.jpg',
+						'/sw-test/gallery/snowTroopers.jpg'</span>
+						<span class="dark-blue" >]);
+					&#125;)
+				);
+			&#125;) </span>
+	</pwa-example-code>
+	<ul>
+		<li>Здесь ставим обработчик события <span class="dark-blue">install</span> на сервисного рабочего, и затем на объекте события вызываем метод <span class="dark-blue">event.waitUntil()</span>, приостанавливающий установку сервисного рабочего до определения состояния промиса, возвращаемого из последовательности методов открытия и сохранения в кэш.</li>
+		<li>Внутри метода <span class="dark-blue">waitUntil()</span>, используем метод открытия кэша <span class="dark-blue">cache.open()</span> , применив к параметру его идентификатор (имя). Если кэш не существует, то будет создан. Возвращается промис создания кэша c экземпляром созданного кэша, на котором вызываем метод добавления файлов в кэш, в параметр которого принимает массив путей к файлам. </li>
+		<li>Если промис отклонен, событие установки является неудачным, сервисный рабочей не устанавливается. Это не влияет на приложение и все повториться при повторной попытки установки сервисного рабочего. </li>
+		<li>После успешной установки сервисный рабочий устанавливается и вызывается событие активации, которое используется в основном для удаления старых кэшей. </li>
+	</ul>
+	<p><span class="dark-blue">Local Storage</span> работает подобно кэшу сервисного рабочего, но является синхронным местом хранения, что не подходит для использования сервисного рабочего. <br>
+	<span class="dark-blue">IndexedDb</span> может быть использована внутри сервисного рабочего для определения хранения динамических данных. </p>
+	<h4 id="responses" pwa-query-selector>Настройка сетевых запросов.</h4>
+	<p>Когда ресурсы приложения кэшированы, необходимо настроить стратегию управления кэшированным контентом. Это выполняется при возникновении события <span class="dark-blue">fetch</span>. Оно возникает каждый раз когда страницы, находящиеся в контексте ответственности сервисного рабочего совершают сетевые запросы к кэшированным ресурсам. Определение обработчика этого события происходит на экземпляре сервисного рабочего, через глобальную переменную <span class="dark-blue">self</span>. Метод <span class="dark-blue">cache.match()</span> принимает в параметр строку <span class="dark-blue">URL</span> на ресурс или объект типа <span class="dark-blue">Request</span>, получаемый из объекта события <span class="dark-blue">fetch</span> и, используя его как ключ, получает из кэша объект типа <span class="dark-blue">Response</span>, если он доступен и возвращает его как ответ на запрос методом <span class="dark-blue">event.respondWith()</span> </p>
+	<pwa-example-code [context]="{header : 'Обработка сетевой активности.', ext : 'sw.js'}">
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch'</span><span class="dark-sky" >, function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+			<span class="dark-red" >event.</span><span class="dark-blue" >respondWith(</span>
+				<span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="dark-red" >event.</span><span class="dark-blue" >request)
+			);
+		&#125;);</span>
+	</pwa-example-code>
+	<h4 id="recover-response" pwa-query-selector>Востановление неудачных запросов.</h4>
+	<p>Метод <span class="dark-blue"> caches.match(event.request)</span> хорош, когда в кэше находиться ответ, а что если ответа в кэше нет? Если мы не предусмотрели обработки ошибок этого метода, то промис вернет <span class="dark-blue">undefined</span>, и метод <span class="dark-blue">event.respondWith()</span> ничего не вернет. Для этого нужно использовать конструкцию сетевого запроса на ресурс. Если ресурса нет в кэше, пробуем получить его с сервера, сохраним его в кэш, что бы позже можно было использовать при отсутствие сети.
+	</p>
+	<pwa-example-code [context]="{header : 'Пример запроса для получения ресурса из кэша или с сервера', ext : 'sw.js'}">
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch'</span><span class="dark-sky" >, function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+			<span class="dark-red" >event.</span><span class="dark-blue" >respondWith(</span><span class="dark-red" >caches.</span><span class="dark-blue" >match(</span><span class="dark-red" >event.</span><span class="dark-blue" >request).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >response</span><span class="dark-sky" >) &#123;</span>
+			<span class="grey">// Метод caches.match() вернет либо объект Response, либо undefined</span>
+				<span class="dark-blue" >if (</span><span class="dark-red" >response</span> <span class="dark-blue" >!== undefined) &#123;
+					return </span> <span class="dark-red" >response</span><span class="dark-blue" >;
+				&#125; else &#123;
+					return </span> <span class="purple" >fetch(</span><span class="dark-red" >event.</span><span class="dark-blue" >request).then(</span><span class="dark-sky" >function (</span><span class="dark-red" >response</span><span class="dark-sky" >) &#123;</span>
+					<span class="grey">// Поскольку объект Response - неизменяемый объект и является потоком,
+			нужно его клонировать: предок уйдет пользователю, а клон уйдет в кэш</span>
+						<span class="dark-blue" >let responseClone = </span><span class="dark-red" >response.</span><span class="dark-blue" >clone();</span>
+						<span class="dark-red" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'v1'</span><span class="dark-blue" >).then(</span><span class="dark-sky" >function (</span><span class="dark-red" >cache</span><span class="dark-sky" >) &#123;</span>
+							<span class="dark-red" >cache.</span><span class="dark-blue" >put(</span><span class="dark-red" >event.</span><span class="dark-blue" >request, responseClone);
+						&#125;);
+						return </span> <span class="dark-red" >response</span><span class="dark-blue" >;
+					&#125;).catch(</span><span class="dark-sky" >function</span><span class="dark-blue" >() &#123;
+						return </span><span class="dark-red" >caches.</span><span class="dark-blue" >match(</span><span class="green" >'/sw-test/gallery/badRequest.png'</span><span class="dark-blue" >);
+				&#125;);
+			}
+		&#125;));
+	&#125;);</span>
+	</pwa-example-code>
+	<p>Пробрасываем сетевой запрос в случае, если кэш пустой. Метод <span class="dark-blue">fetch(event.request)</span> возвращает промис. Клонирование ответа необходимо, потому, что объекты <span class="dark-blue" >Response</span> и <span class="dark-blue">Request</span> являются потоками и могут быть прочитаны только один раз. Для того, что бы вернуть ответ в браузер и положить в кэш мы клонируем его, и два эеземпляра ответа читаются только один раз. Запускаем функцию поиска нужного кэша <span class="dark-blue">caches.open('v1')</span>, так же возвращающую промис, и кладем в него копию ответа, а в браузер возвращаем сам ответ. Но если запрос ничего не нашел в кэше, или сеть не доступна, наш запрос рухнет. Поэтому определяем запасной вариант обращения в кэш, для того, что бы пользователь хоть, что-то получил, к примеру изображение неудачного запроса. </p>
+	<h4 id="pre-sittings" pwa-query-selector>Преднастройки метода <span class="dark-blue">.fetch()</span>. </h4>
+	<p>При использовании этого метода, по умолчанию, запрос не содержит данные о полномочиях, такие как <span class="dark-blue">cookies</span>, поэтому они требуют явного включения там, где это необходимо. Поведение этого метода, такое же как и других <span class="dark-blue">CORS</span> запросов, никогда не отсылает кукисы, если они явно не указаны.  </p>
+	<pwa-example-code [context]="{header : 'Явная передача cookies', ext : 'sw.js'}">
+		<span class="purple" >fetch(</span><span class="dark-red" >url</span><span class="dark-blue" >, &#123;</span>
+			<span class="brown" >credentials : </span><span class="green" >'include'</span><span class="dark-blue">
+		&#125;) </span>
+	</pwa-example-code>
+	<p>По умолчанию, запрос ресурса с постороннего <span class="dark-blue">URL</span> будет неудачен, если нет явной поддержки <span class="dark-blue">CORS</span>. Добавление свойства <span class="dark-blue">no-CORS</span> в настройку объекта запроса <span class="dark-blue">Request</span>, переопределяет такое поведение, но это приводит к  непрозрачному ответу, т.е. невозвожно определить, удачный был ответ или нет.</p>
+	<pwa-example-code [context]="{header : 'Кроссдоменный запрос ресурса', ext : 'sw.js'}">
+		<span class="purple" >cache.</span><span class="dark-blue" >addAll(</span><span class="dark-sky" >urlsToPrefetch.</span><span class="dark-blue" >map(</span><span class="dark-sky" >function(</span><span class="dark-red" >urlToPrefetch</span><span class="dark-blue" >) &#123;
+			return new </span><span class="purple" >Request(</span><span class="dark-red" >urlToPrefetch</span><span class="dark-blue" >, &#123; mode : </span><span class="green" >'no-cors'</span><span class="dark-blue" >&#125;);
+		})).then(</span><span class="dark-sky" >function()</span> <span class="dark-blue" >&#123;
+			console.log(</span><span class="green" >'Все ресурсы загружены и кэшированы.'</span><span class="dark-blue" >);
+		&#125;);</span>
+	</pwa-example-code>
+	<h4 id="processing-images" pwa-query-selector>Обработка отзывчивых изображений.</h4>
+	<p>Атрибут <span class="dark-blue">srcset</span>  или элемент <span class="purple">&#60;picture&#62;</span> выберут более подходящее для устройста изображение из набора предложенных изображений, и выаолнят <span class="dark-blue">runtime</span> запрос. Для сервисного рабочего, если нужно кэшировать изображение на шаге установки, используется несколько возможностей:</p>
+	<ul>
+		<li>Загрузить в кэш все изображения, адреса которых находятся в списке адресов ресурсов элемента.</li>
+		<li>Загрузить изображение низкоко разрешения.</li>
+		<li>Загрузить изображение высокого разрешения.</li>
+	</ul>
+	<p>В реальности, было бы расточительно загружать все изображения, находящиеся в списке адресов элемента, расходуя память, а воспользоваться вторым или третьим пунктом. Предположим, что загружаем вариант низкого разрешения во время установки рабочего, но дальше нужно получить вариант высокого разрешения из сети, когда страница загружена. Но если, загрузка варианта высокого разрешения окажется неудачной, тогда изображение остается в низком разрешении. Все бы ничего, но есть проблема. Предположим у нас есть набор их двух изображений разного разрешения:</p>
+	<ul>
+		<li>1x : 400x400</li>
+		<li>2x : 800x800</li>
+	</ul>
+	<p>В атрибуте <span class="dark-blue">srcset</span> находиться список: </p>
+	<pwa-example-code [context]="{header : 'Атрибут srcset', ext : 'html'}">
+		<span class="purple" >&#60;img</span> <span class="dark-blue" >src=</span><span class="green" >"image-src.png"</span> <span class="dark-blue" >srcset=</span><span class="green" >"image-src.png 1x, image-2x.png 2x"</span><span class="purple">/&#62;</span>
+	</pwa-example-code>
+	<p>Если мы находимся на дисплее 2x, браузер должен выбрать для загрузки адрес <span class="green">image-2x.png</span>, если устройство оказалось вне сети, можем запустить <span class="dark-blue">.catch()</span> и запрос ветнет изображение низкого разрешения <span class="green">image-src.png</span>, вместо изображение из кэша. Однако, браузер ожидает получить изображение высокого разрешения на экранах 2x, поэтому вместо него появиться низкоразрешаущее изображение. Единственный способ решения - установка фиксированных значений ширины и высоты изображения. Элемент <span class="purple">&#60;picture&#62;</span> использует технологию <span class="dark-blue">art direction</span>, усложняет подобный прием, но не отменяет его и зависит от того, как изображение создано и используется.</p>
+	<pwa-example-code [context]="{header : 'Фиксация размера изображения', ext : 'html'}">
+		<span class="purple" >&#60;img</span> <span class="dark-blue" >src=</span><span class="green" >"image-src.png"</span> <span class="dark-blue" >srcset=</span><span class="green" >"image-src.png 1x, image-2x.png 2x"</span> <span class="dark-blue" >style=</span><span class="green" >"width:400px; height: 400px;"</span><span class="purple">/&#62;</span>
+	</pwa-example-code>
+	<h4 id="update-service-worker" pwa-query-selector>Обновление сервисного рабочего.</h4>
+	<p>Если на домене уже установлен сервисный рабочий, то новая версия сервисного рабочего станет активной при обновлении (перезагрузки) страницы. Новая версия рабочего, при наличии страрого активного рабочего, устанавливается не активной для этой страницы, и для его активации необходимо отсутствие какой либо страницы, работающей под контролем старого сервисного рабочего. Как только все страницы работающие под управлением старого сервисного рабочего закрываются, его файл отключается. Пример нового файла сервисного рабочего, подключающего другой кэш, приведен ниже (все тоже самое, только используем другой кэш): </p>
+	<pwa-example-code [context]="{header : 'Файл обновленного рабочего', ext : 'sw.js'}">
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'install'</span><span class="dark-sky" >, function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+			<span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(</span>
+				<span class="dark-red" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'v2'</span><span class="dark-blue" >).then(</span><span class="dark-sky" >function(</span><span class="dark-red" >cache</span><span class="dark-blue" >) &#123;
+					return </span> <span class="dark-red" >cache.</span><span class="dark-blue" >addAll([</span>
+						<span class="green" >'/sw-test/',
+						'/sw-test/index.html',
+						'/sw-test/style.css',
+						'/sw-test/app.js',
+						'/sw-test/image-list.js',</span>
+				<span class="grey">// включаем другие ресурсы новой версии...</span>
+					<span class="dark-blue" >]);
+				&#125;)
+			);
+		&#125;);</span>
+	</pwa-example-code>
+	<p>Шаги по обновлению сервисного рабочего можно упорядочить:</p>
+	<ul>
+		<li>Обновить файл JavaScript сервисного рабочего (sw.js). Когда пользователь переходит в приложение, браузер пытается повторно загрузить скрипт сервисного рабочего. Если этот объем в битах этого файла отличается от объема находящегося в браузере файла, вновь загружаемый файл рассматривается как новый файл сервисного рабочего.</li>
+		<li>Этот файл начнет работу и на экземпляре сервисного рабочего запустится событие <span class="dark-blue">install</span>. </li>
+		<li>В этой точке старый сервисный рабочий все еще контролирует открытые страницы, поэтому новый сервисный рабочий будет введен в состояние ожидания.</li>
+		<li>Когда открытые страницы, контролируемые старым сервисным рабочим закроются, и не останется не одной открытой, тогда стаоый сервисный рабочий останавливается. Далее, при открытии страниц приложения, управления ими переходит под ответственность нового сервисного рабочего, а старый в последствии удаляется.</li>
+		<li>Как только новый сервисный рабочий принял контроль над страницами, на экземпляре его класса возникает событие <span class="dark-blue">active</span>. Событие для управлением кэшами, удобно тем, что при удалении страрых кэшей в этом событии, старые сервисные рабочие внезапно теряют возможность управления ресурсами из старых кэшей.</li>
+	</ul>
+	<h4 id="delete-old-cache" pwa-query-selector>Удаление старых кэшей.</h4>
+	<p>Эта операция происходит в обработчике события <span class="dark-blue">activate</span>, которое используется в основном для отчистки от старых кэшей, удаления ненужных данных, освобождая место на жестком диске, поскольку каждый браузер имеет строго ограниченный объем памяти хранения данных для одного сервисного рабочего. Поэтому отчистка данных для домена происходит по принципу : либо всё, либо ничего. Промисы, переданные в метод события <span class="dark-blue">event.waitUntil()</span>, будут блокировать другие события до их разрешения, поэтому разработчик может быть уверен, что к моменту первого события для нового кэша <span class="dark-blue">fetch</span>, операции отчистки старого кэша завершаться.</p>
+	<pwa-example-code [context]="{header : 'Отчистка старого кэша перед первым сетевым событием нового кэша ', ext : 'sw.js'}">
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'activate'</span><span class="dark-sky" >, function(</span><span class="dark-red" >event</span><span class="dark-sky" >) &#123;</span>
+			<span class="purple" >var</span> <span class="dark-blue" >cacheWhitelist = [</span><span class="green" >'v2'</span><span class="dark-blue" >];</span>
+			<span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(</span>
+				<span class="dark-red" >caches.</span><span class="dark-blue" >keys().then(</span><span class="dark-sky" >function(</span><span class="dark-red" >keyList</span><span class="dark-blue" >) &#123;
+					return </span><span class="purple" >Promise.</span><span class="dark-blue" >all(</span><span class="dark-red" >keyList.</span><span class="dark-blue" >map(</span><span class="dark-sky" >function(</span><span class="dark-red" >key</span><span class="dark-blue" >) &#123;
+						if (cacheWhitelist.indexOf(</span><span class="dark-red" >key</span><span class="dark-blue" >) === -1) &#123;
+							return </span> <span class="dark-red" >caches.</span><span class="dark-blue" >delete(</span><span class="dark-red" >key</span><span class="dark-blue" >);
+						&#125;
+					&#125;));
+				&#125;)
+			);
+		&#125;);</span>
+	</pwa-example-code>
+	<h4 id="tools" pwa-query-selector>Инструментарий разработчика.</h4>
+	<p>Чтобы отследить активность текущих сервисных рабочих, зарегистрированных на устройстве, в поле адреса ввести <span class="dark-blue">chrome://inspect/#service-workers</span> и <span class="dark-blue">chrome://serviceworker-internals</span> - для отображения подробностей и управлению (старт, остановка, отладка) процессами рабочих.</p>
+
+
+
+</mat-card>
