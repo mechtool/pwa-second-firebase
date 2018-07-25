@@ -1,0 +1,8 @@
+.attentionContent{
+    padding: 16px 24px 24px 24px;
+}
+mat-icon{
+    top: 5px;
+    position: relative;
+    margin-right: 8px;
+}

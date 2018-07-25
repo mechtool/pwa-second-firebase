@@ -1,0 +1,4 @@
+<div class="attentionContent" [ngStyle]="{color: context.color , 'background-color' : context.backgroundColor }">
+	<mat-icon class="icon" *ngIf="context.icon" [svgIcon]="context.icon"></mat-icon>
+	<ng-content></ng-content>
+</div>
