@@ -1,0 +1,180 @@
+<mat-card class="pwa-page">
+	<h4 id="subscribingUser" pwa-query-selector>Подписка пользователя.</h4>
+	<p>Для начала подписки, разработчику необходимо получить разрешение пользователя для получения уведомлений с данного ресурса, после получение которого на сервис уведомления отправляется запрос с регистрацией подписки пользователя, результатом которого является объект подписки <span class="dark-blue">PushSubscription</span>. Логический поток этого процесса описан ниже. </p>
+	<h5>Определение функциональности.</h5>
+	<p>Первым делом необходимо проверить возможности текущего браузера поддерживать технологию уведомлений. Для этого проверяется:</p>
+	<ul>
+		<li>Поддержку сервисного рабочего на экземпляре <span class="dark-blue">navigator</span> .</li>
+		<li>Поддержку <span class="dark-red">PushManager</span> на экземпляре <span class="dark-blue">window</span>. Далее немного псевдокода :
+	<pwa-example-code [context]="{header : 'Псевдокод проверки интерфейсов', ext : '.js'}">
+	<span class="dark-sky">if(!('serviceWorker' in navigator))&#123;Сервисный рабочий не поддерживается в браузере, скрываем пользовательский интерфейс; return&#125;
+  if(!('PushManager' in window))&#123;Оповещения не поддерживаються в браузере, скрываем пользовательский интерфейс: return&#125;</span>
+	</pwa-example-code>
+		</li>
+	</ul>
+	<p>В настоящее время современные браузеры активно форсируют поддержку этих интерфейсов, однако, проверка никогда не помешает.</p>
+	<h5 id="registerServiceWorker" pwa-query-selector>Регистрация сервисного рабочего.</h5>
+	<p>После успешной проверки функциональности, следующим шагом является регистрация сервисного рабочего. Этим самым мы указываем местоположение файла рабочего, который является простым файлом javascript, который имеет контекст, отличный от контекста документа (контекст сервисного рабочего), имеющий доступ к API сервисного рабочего, не имеющий прямого доступа к клиентам, которых он обслуживает, связь с которыми поддерживается не на прямую, а через API сообщений. Для регистрации используется метод <span class="dark-blue">navigator.serviceWorker.register()</span>, передавая в параметр путь у файлу рабочего: </p>
+	<pwa-example-code [context]="{header : 'Регистрация сервисного рабочего', ext : 'index.js'}">
+	<span class="dark-sky" >function </span><span class="dark-blue" >registerServiceWorker() &#123;
+		return </span><span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.register(</span><span class="green" >'service-worker.js'</span><span class="dark-blue" >)
+			.then(function(</span><span class="dark-red" >registration</span><span class="dark-blue" >) &#123;
+				console.log('Service worker successfully registered.');
+				return </span><span class="dark-red" >registration</span><span class="dark-blue" >;
+			&#125;)
+			.catch(function(</span><span class="dark-red" >err</span><span class="dark-blue" >) &#123;
+				console.error(</span><span class="green" >'Невозможно зарегистрировать сервисного рабочего.',</span><span class="dark-red" >err</span><span class="dark-blue" >);
+			&#125;);
+		&#125;</span>
+	</pwa-example-code>
+	<p>Код выше регистрирует сервисный рабочий и указывает на его местоположение, в данном случае <span class="green">'/service-worker.js'</span>. Если регистрация окажется неудачной, первым делом нужно проверить код на ошибки в <span class="dark-blue">Chrome Dev Tools</span>, если регистрация удачна, метод возвращает объект регистрации сервисного рабочего <span class="dark-blue">ServiceWorkerRegistration</span>, который используется для доступа к основным <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/PushManager">PushManager API</a>. После вызова метода регистрации браузер выполняет: </p>
+	<ul>
+		<li>Загружает файл сервисного рабочего</li>
+		<li>Запускает этот файл</li>
+		<li>Если все запустилось без ошибок, метод регистрации возвращает промис с объектом <span class="dark-blue">ServiceWorkerRegistration</span>, иначе промис будет отвергнут. </li>
+	</ul>
+	<h5 id="permissionRequest" pwa-query-selector>Запрос разрешения</h5>
+	<p>После регистрации сервисного рабочего, для начала подписки пользователя на получение уведомлений, нужно получить у него разрешение на этот процесс. Интерфейс для получения разрешения довольно простой. В настоящее время реализация этого интерфейса меняется от запуска колбека с результатом запроса, до возврата промиса с тем же результатом. Проблема в том, что невозмодно точно определить, что именно возвращает метод запроса разрешения, поэтому на момент написания статьи, необходимо предусмотреть обработку двух разных типов.</p>
+	<pwa-example-code [context]="{header : 'Запрос разрешения', ext : '.js'}">
+	<span class="dark-sky" >function </span><span class="dark-blue" >askPermission() &#123;
+		return new </span><span class="purple" >Promise</span><span class="dark-blue" >(function(</span><span class="dark-red" >resolve, reject</span><span class="dark-blue" >) &#123;
+			const permissionResult = </span><span class="purple" >Notification.</span><span class="dark-blue" >requestPermission(function(</span><span class="dark-red" >result</span><span class="dark-blue" >) &#123; </span>
+					<span class="grey">//сюда перейдет управление, если метод реализуется через колбек </span>
+									<span class="dark-red" >resolve</span><span class="dark-blue" >(</span><span class="dark-red" >result</span><span class="dark-blue" >);
+			&#125;);
+		if (permissionResult) &#123;</span>
+					<span class="grey">//сюда перейдет управление, если метод реализован через промис.</span>
+							<span class="dark-blue" >permissionResult.then(</span><span class="dark-red" >resolve, reject</span><span class="dark-blue" >);
+			&#125;
+		&#125;).then(function(permissionResult) &#123;
+			if (permissionResult !== </span><span class="green" >'granted'</span><span class="dark-blue" >) &#123;
+				throw new </span><span class="purple" >Error(</span><span class="green" >'Разрешение не получено'</span><span class="dark-blue" >);
+			&#125;
+		&#125;);
+	&#125;  </span>
+	</pwa-example-code>
+	<p>В коде выше, метод <span class="dark-blue">Notification.requestPermission()</span> вызовет немного отличающиеся диалоги в различтных браузерах, для получения разрешения пользователя: </p>
+	<div class="imgContainer">
+		<img src="/assets/icons/subscribing-user/permission-prompt.png">
+	</div>
+	<p>На каждое действие пользователя существует определенный строковый тип результата: если разрешение получено - <span class="green">"granted"</span>, сообщение отклонено - <span class="green">"denied"</span>, сообщение закрыто через элемент креста в правом верхнем углу - <span class="green">"default"</span>. В примере выше, промис, возвращаемый из функции разрешается, если разрешение получено, иначе выбрасывается ошибка, создающая отклоненный промис. Отдельно нужно обрабатывать случай отклонения разрешения (кнопка "Block"). Если это происходит, приложение уже не сможет иметь возможность запросить разрешение снова. Его необходимо разблокировать вручную, изменяя статус разрешения, находящийся в панели настроек. Поэтому, обязательно обдумывайте удобный момент отображения диалога, поскольку повторно его отобразить не просто.</p>
+	<h5 id="subscribeUser" pwa-query-selector>Подписка пользователя.</h5>
+	<p>Когда сервисный рабочий установлен и разрешение на подписку получено, можно приступать к подписке пользователя, вызвав метод объекта контекста сервисного рабочего <span class="dark-blue">registration.pushManager.subscribe()</span>.</p>
+	<pwa-example-code [context]="{header : 'Подписка пользователя', ext : 'index.js'}">
+	<span class="dark-sky" >function</span> <span class="dark-blue" >subscribeUserToPush() &#123;
+	return </span><span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.register(</span><span class="green" >'service-worker.js'</span><span class="dark-blue" >)
+		.then(function(</span><span class="dark-red" >registration</span><span class="dark-blue" >) &#123;
+			const subscribeOptions = &#123;</span>
+												<span class="brown" >userVisibleOnly :</span> <span class="dark-blue" >true,</span>
+												<span class="brown" >applicationServerKey : </span><span class="dark-blue" >urlBase64ToUint8Array(</span>
+														<span class="green" >'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U'</span><span class="dark-blue">
+				)
+			&#125;;
+			return </span><span class="purple" >registration.</span><span class="dark-blue" >pushManager.subscribe(subscribeOptions);
+		&#125;).then(function(</span><span class="dark-red" >pushSubscription</span><span class="dark-blue" >) &#123;
+			console.log(</span><span class="green" >'Получен объект PushSubscription: '</span><span class="dark-blue" >, JSON.stringify(</span><span class="dark-red" >pushSubscription</span><span class="dark-blue" >));
+			return </span><span class="dark-red" >pushSubscription</span><span class="dark-blue" >;
+		&#125;);
+	&#125;</span>
+	</pwa-example-code>
+	<p>При вызове метода <span class="dark-blue">subscribe()</span>, в параметр передается объект свойств, который состоит из обязательных и необязательных свойств:<br> <br>
+	<span class="dark-blue">userVisibleOnly</span> - когда уведомление первый раз попадает в браузер, существует неопределенность в том, что разработчик может спроектировать так, что сообщение придет, но не отобразиться пользователю (тихие уведомления), активируя, к примеру, несанкционированные действия по отслеживанию пользовательской сетевой активности. Для предотвращения подобных сценариев было добавлено это свойство, логическое значение которого <span class="dark-blue">true</span> - является индикатором обязательного отображения всех входящих уведомлений пользователю. Это свойство обязательное и должно содержать логическую истину. Если оно не присутствует или значение ложное, будет вброшена ошибка.<br><br>
+	<span class="dark-blue">applicationServerKey</span> - это свойство используется сервисом уведомлений для идентификации приложения, подписывающего пользователя и гарантирующее, что это же приложение будет являтся источником сообщений. Этот ключ состоит из пары : открытого ключа и закрытого ключа, которые являются уникальными для приложения. Закрытый ключ должен храниться в тайне, а открытый ключ является предметом публичной передачи. Эта открытая часть ключа передается в метод <span class="dark-blue">.subscribe()</span>,а затем в сервис уведомлений при подписке пользователя, связывая этим ключом приложение и возвращаемый объект подписки <span class="dark-blue">PushSubscription</span>. Ниже, расположена визуальная последовательность подписки пользователя и возврата объекта подписки: </p>
+	<div class="imgContainer">
+		<img src="/assets/icons/subscribing-user/application-server-key-subscribe.svg">
+	</div>
+	<p>При отправке сообщения на сервис уведомлений, необходимо задать заголовок <span class="dark-blue">Authorization</span>, который должен содержать значение <span class="dark-red" >закрытого ключа</span> приложения. Когда сервис уведомлений получает запрос на отправку уведомления, он проверяет этот заголовок с закрытым ключем и отыскивает его вторую часть в виде открытого ключа, ранее полученного при подписке, затем находит адрес назначения в виде конечной точки (end point). Такая последовательность мероприятий проверки предотвращает отправку сообщений с незнакомого сервера пользователям приложения. Ниже, расположена визуальная последователость отправки сообщение с сервера приложения на сервис уведомлений: </p>
+	<div class="imgContainer">
+		<img src="/assets/icons/subscribing-user/application-server-key-send.svg">
+	</div>
+	<p>Технически, серверный ключ не обязателен, однако упрощенная реализация этих API в Chrome требует его, как и другие браузеры, кроме Firefox. <a target="_blank" href="https://tools.ietf.org/html/draft-thomson-webpush-vapid-02">VAPID</a> - спецификация, определяющая стандарт серверного ключа приложения.</p>
+	<h5 id="serverKey" pwa-query-selector>Как создать серверный ключ приложения.</h5>
+	<p>Пару открытого и закрытого ключей для использования в виде серверного ключа приложения можно создать с использованием сервиса <a target="_blank" href="https://web-push-codelab.glitch.me/">Push Companion</a> или используя библиотеку <a target="_blank" href="https://github.com/web-push-libs/web-push#command-line">Web Push</a>, сгенерировав ключи простой коммандой, которую запускают один раз для сервера приложения, сохраняя закрытый ключ в тайне :  </p>
+	<pwa-example-code [context]="{header : 'Генерация серверного ключа библиотекой web-push', ext : 'cmd'}">
+		<span class="dark-blue" >$ npm install -g web-push
+     $ web-push generate-vapid-keys</span>
+	</pwa-example-code>
+	<h5 id="subscribeMethod" pwa-query-selector>Разрешения пользователя и метод subscribe().</h5>
+	<p>Существует побочный эффект вызова метода <span class="dark-blue">.subscribe()</span>. Если приложение не имеет разрешение пользователя на подписку во время вызова этого метода в обход явного запроса разрешения пользователя, браузер запросит разрешение автоматически, отобразив интерактивный интерфейс пользователю. Поэтому для полного контроля над активностью приложения, используйте известный поток событий, запрашивая разрешение пользователя явно методом <span class="dark-blue">Notification.requestPermission()</span>.  </p>
+	<h5 id="pushObject" pwa-query-selector>Объект Push Subscription</h5>
+	<p>При удачной подписки пользователя, метод <span class="dark-blue">subscribe()</span> вернет промис, содержащий этот полезный объект. Он содержит всю необходимую информацию, для отправки сообщений пользователю, и если вывести на печать додержимое объекта, используя <span class="dark-blue">JSON.stringify()</span>, то получиться следующее: </p>
+	<pwa-example-code [context]="{header : 'Свойства объекта подписки', ext : 'console'}">
+	<span class="dark-blue" >&#123;
+	"endpoint": "https://some.pushservice.com/здесь что-то уникальное",
+	"keys": &#123;
+		"p256dh":
+			"BIPUL12DLfytvTajnryr2PRdAgXS3HGKiLqndGcJGabyhHheJYlNGCeXl1dn18gSJ1WAkAPIxr4gK0_dQds4yiI=",
+		"auth":"FPssNDTKnInHVndSTdbKFw=="
+	&#125;
+    &#125;</span>
+	</pwa-example-code>
+	<p><span class="dark-blue">endpoint</span> - URL сервиса адреса устройства пользователя. Для запуска сообщения этому пользователю, создается <span class="dark-blue">POST</span> запрос на этот адрес. <br><br>
+	Объект <span class="dark-blue">keys</span> содержит значения, используемые для кодирования данных, отправляемых вместе с сообщением.  </p>
+	<h5 id="sendSubscribeObject" pwa-query-selector>Передача объекта подписки на сервер приложения.</h5>
+	<p>После оформления подписки и получения экземпляра объекта подписки, его нужно направить на сервер приложения, где сохранить для последующего использования. Как это сделать решать разработчику, но удобный метод трансформации объекта для простой передачи на сервер предлагает метод <span class="dark-blue">JSON.stringify()</span>. Альтернативно можно комбинировать различные способы доставки: </p>
+	<pwa-example-code [context]="{header : 'Ручная обработка объекта подписки', ext : 'index.js'}">
+	<span class="dark-blue" >const subscriptionObject = &#123; </span>
+		<span class="brown" >endpoint: </span><span class="dark-blue" >pushSubscription.endpoint,</span>
+		<span class="brown" >keys: </span><span class="dark-blue" >&#123; </span>
+			<span class="brown" >p256dh:</span> <span class="dark-blue" >pushSubscription.getKeys(</span><span class="green" >'p256dh'</span><span class="dark-blue" >),</span>
+			<span class="brown" >auth: </span><span class="dark-blue" >pushSubscription.getKeys(</span><span class="green" >'auth'</span><span class="dark-blue" >)
+	&#125;
+  &#125;;</span>
+	<span class="grey">// Отрывок выше можно обработать проще:</span>
+	<span class="dark-blue" >const subscriptionObjectToo = </span><span class="purple" >JSON.</span><span class="dark-blue" >stringify(pushSubscription);</span>
+	</pwa-example-code>
+	<p>Отправка объекта подписки на сервер методом <span class="dark-blue">fetch()</span> </p>
+	<pwa-example-code [context]="{header : 'Отправка объекта подписки на сервер', ext : 'index.js'}">
+	<span class="dark-sky" >function</span> <span class="dark-blue" >sendSubscriptionToBackEnd(</span><span class="dark-red"> subscription</span><span class="dark-blue" >) &#123;
+	return </span><span class="purple" >fetch(</span><span class="green" >'/api/сохранения-подписки/'</span><span class="dark-blue" >, &#123;</span>
+					<span class="brown" >method: </span><span class="green" >'POST',</span>
+					<span class="brown" >headers: &#123;</span>
+						<span class="green" >'Content-Type' : 'application/json'</span>
+					<span class="dark-blue" >&#125;,</span>
+					<span class="brown" >body: </span><span class="purple" >JSON.</span><span class="dark-blue" >stringify(</span><span class="dark-red" >subscription</span><span class="dark-blue" >)
+	&#125;)
+	.then(function(</span><span class="dark-red" >response</span><span class="dark-blue" >) &#123;
+		if (!</span><span class="dark-red" >response</span><span class="dark-blue" >.ok) &#123;
+			throw new </span><span class="purple" >Error(</span><span class="green" >'Не удалось сохранить объект подписки.'</span><span class="dark-blue" >);
+		&#125;
+		return </span><span class="dark-red" >response</span><span class="dark-blue" >.json();
+	&#125;).then(function(</span><span class="dark-red" >responseData</span><span class="dark-blue" >) &#123;
+		if (!(</span><span class="dark-red" >responseData.</span><span class="dark-blue" >data && </span><span class="dark-red" >responseData</span><span class="dark-blue" >.data.success)) &#123;
+			throw new </span><span class="purple" >Error(</span><span class="green" >'Не удалось сохранить объект подписки.'</span><span class="dark-blue" >);
+		&#125;
+	&#125;);
+  &#125;</span>
+	</pwa-example-code>
+	<p>Сервер Express-Node.js получает запрос и сохораняет объект подписки в базе данных, для дальнейшего его использования при отправки сообщения</p>
+	<pwa-example-code [context]="{header : 'Прием запроса с объектом подписки', ext : 'Server index.js'}">
+	<span class="dark-blue" >app.post(</span><span class="green" >'/api/сохранения подписки/'</span><span class="dark-blue" >, function (</span><span class="dark-red" >req, res</span><span class="dark-blue" >) &#123;
+	<span class="grey">//просто проверка корректности запроса</span>
+	if (!isValidSaveRequest(</span><span class="dark-red" >req, res</span><span class="dark-blue" >)) &#123;
+		return;
+	&#125; </span>
+		<span class="grey">//какой-то метод сохранения данных в базе</span>
+		<span class="dark-blue" >return saveSubscriptionToDatabase(</span><span class="dark-red" >req.</span><span class="dark-blue" >body)
+	.then(function(</span><span class="dark-red" >subscriptionId</span><span class="dark-blue" >) &#123;</span>
+					<span class="grey">//сохранение прошло удачно, отписываемся об этом клиенту</span>
+					<span class="dark-red" >res.</span><span class="dark-blue" >setHeader(</span><span class="green" >'Content-Type', 'application/json'</span><span class="dark-blue" >);</span>
+					<span class="dark-red" >res.</span><span class="dark-blue" >send(</span><span class="purple" >JSON.</span><span class="dark-blue" >stringify(&#123; </span><span class="brown" >data:</span> <span class="dark-blue" >&#123; success: true &#125; &#125;));
+	}).catch(function(</span><span class="dark-red" >err</span><span class="dark-blue" >) &#123;
+	<span class="grey">//сообщаем об ошибке</span>
+		res.status(500);
+		res.setHeader(</span><span class="green" >'Content-Type', 'application/json'</span><span class="dark-blue" >);
+		res.send(</span><span class="purple" >JSON.</span><span class="dark-blue" >stringify(&#123;</span>
+							<span class="brown" >error:</span><span class="dark-blue" >&#123;</span>
+								<span class="brown" >id: </span><span class="green" >'Не удалось сохранить объект подписки',</span>
+								<span class="brown" >message: </span><span class="green" >'Сообщение было получено, но серверу не удалось его сохранить'</span>
+								<span class="dark-blue" >&#125;
+		&#125;));
+	&#125;);
+  &#125;);</span>
+	</pwa-example-code>
+	<h5 id="faq" pwa-query-selector>Часто задаваемые вопросы.</h5>
+	<ul>
+		<li>Можно ли изменить сервис уведомлений, используемый браузером? Нет. Адреса сервисов уведомлений встроенны в браузеры и разработчик не может этого изменить, однако поведение браузеров и типы возвращаемых значений унифицированы. </li>
+		<li>Браузеры пользуются одинаковыми API для разных сервисов уведомлений? Да, сервисы уведомлений ожидают одни и теже API, реализуемые протоколом <a target="_blank" href="https://tools.ietf.org/html/draft-ietf-webpush-protocol-12">Web Push</a>, описывающим правила и структуру запросов, которые необходимы приложению для запуска сообщения.</li>
+		<li>Если подписать пользователя на десктопном браузере, распостанится ли эта подписка на его мобильные устройства? Конечно нет, Пользователь должен регистрироватся на получение уведомлений для каждого браузера на который будут приходить эти уведомления.</li>
+	</ul>
+</mat-card>

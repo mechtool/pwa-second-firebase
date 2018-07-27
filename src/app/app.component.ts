@@ -71,17 +71,17 @@ export class AppComponent implements AfterViewInit{
             new SideNavItem({text : "Оболочка приложения", href :  '/guides/app-shell', activeClass : 'activeRoute',  className : 'first'}),
             new SideNavItem({text : "Техника Offline", href : '/guides/offline-cookbook', activeClass : 'activeRoute',  className :'first'}),
             new SideNavItem({text : "Сервисный рабочий", href : '/guides/service-worker', icon :'remove', activeClass : 'activeRoute', className : 'first', children : [
-                new SideNavItem({text : 'Обзор', href : '/guides/service-worker', activeClass : 'activeRoute',  className : 'second'}),
-                new SideNavItem({text : 'Жизненный цикл', href : '/guides/life-cycle', activeClass : 'activeRoute',  className : 'second'}),
-                new SideNavItem({text : 'Регистрация', href : '/guides/registration', activeClass : 'activeRoute',  className : 'second'}),
-                new SideNavItem({text : 'Производительность', href : '/guides/performance', activeClass : 'activeRoute',  className : 'second'}),
-                new SideNavItem({text : 'Ускорение навигации', href : '/guides/speed-up', activeClass : 'activeRoute',  className : 'second'}),
+                new SideNavItem({text : 'Обзор', href : '/guides/service-worker/overview', activeClass : 'activeRoute',  className : 'second'}),
+                new SideNavItem({text : 'Жизненный цикл', href : '/guides/service-worker/life-cycle', activeClass : 'activeRoute',  className : 'second'}),
+                new SideNavItem({text : 'Регистрация', href : '/guides/service-worker/registration', activeClass : 'activeRoute',  className : 'second'}),
+                new SideNavItem({text : 'Производительность', href : '/guides/service-worker/performance', activeClass : 'activeRoute',  className : 'second'}),
+                new SideNavItem({text : 'Ускорение навигации', href : '/guides/service-worker/speed-up', activeClass : 'activeRoute',  className : 'second'}),
             ]}),
-            new SideNavItem({text : "Входящие оповещения", href : '/guides/pn-introduction', activeClass : 'activeRoute', className : 'first', icon : 'remove', children : [
-                new SideNavItem({text : 'Введение', href : '/guides/pn-introduction', activeClass : 'activeRoute', className : 'second'}),
-                new SideNavItem({text : 'Последовательность Push', href : '/guides/principle-push-operation',activeClass : 'activeRoute',  className :'second'}),
-                new SideNavItem({text : 'Подписка пользователя', href : '/guides/subscribing-user',activeClass : 'activeRoute',  className : 'second'}),
-                new SideNavItem({text : 'Пользовательские разрешения', href :'/guides/permission-ux',activeClass : 'activeRoute',  className :'second'}),
+            new SideNavItem({text : "Входящие оповещения", href : '/guides/push-notification', activeClass : 'activeRoute', className : 'first', icon : 'remove', children : [
+                new SideNavItem({text : 'Введение', href : '/guides/push-notification/introduction', activeClass : 'activeRoute', className : 'second'}),
+                new SideNavItem({text : 'Последовательность Push', href : '/guides/push-notification/principle-operation',activeClass : 'activeRoute',  className :'second'}),
+                new SideNavItem({text : 'Подписка пользователя', href : '/guides/push-notification/subscribing-user',activeClass : 'activeRoute',  className : 'second'}),
+                new SideNavItem({text : 'Пользовательские разрешения', href :'/guides/push-notification/permission-ux',activeClass : 'activeRoute',  className :'second'}),
             ]}),
             new SideNavItem({text : 'Установка на устройство',href : '/guides/install-prompt', activeClass : 'activeRoute', className : 'first', icon : 'remove',  children : [
                     new SideNavItem({text : 'Диалоги установки', href : '/guides/install-prompt/install-messages', activeClass : 'activeRoute', className : 'second'}),

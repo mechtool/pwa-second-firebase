@@ -1,0 +1,118 @@
+<mat-card  class="pwa-page" >
+	<h4 id="introduction" pwa-query-selector>Ускорение сервисного рабочего.</h4>
+	<p>В некоторых ситуациях время загрузки сервисного рабочего может задерживать сетевые запросы. Экспериментальная функция <span class="dark-blue">navigation preload</span> (предзагрузка навигации), решает эту проблему, позволяя совершать запросы паралельно с загрузкой  сервисного рабочего. Отличить запросы предзагрузки от простых навигаций можно при помощи заголовка и наличию различного содержания. Данная функция скрыта и её включение производиться через включение экспериментальных функций браузера начиная с Chrome 59 : в адресной строке набираем <span class="dark-blue">browser://flags/#enable-service-worker-navigation-preload</span> и включаем её установкой <span class="dark-blue">Enabled</span>.  </p>
+	<h5>Суть проблемы.</h5>
+	<p>При навигации к сайту, использующему сервисного рабочего, обрабатывающему события <span class="dark-blue">fetch</span>, все запросы происходят через сервисного рабочего. Если он отключен или простаивает, браузеру нужно его разбудить, загрузить и нагрузить его запросом. Время его загрузки в память зависит от устройства и условий загрузки, и  обычно составляет 500 миллисекунд, на мобильном устройстве - около 250. В крайних случаях (медренные устройства или перегрузка процессора) этот процесс может занимать и более 500. Однако, поскольку сервисный рабочий остается в сознании между событиями (диапазон времени до отключения сервисного рабочего управляется браузером), мы редко заметим такие задержки (к примеру, при переходе на сайт с вновь открытой закладки, или при переходе на другой домен). Время загрузки не проблема, если ответ на запрос происходит из кэша, пропуская сетевой запрос. Но, что если ответ происходит из сети, и тогда загрузка сервисного рабочего тормозит сетевые запросы.</p>
+	<h5 id="navigation-preload" pwa-query-selector><span class="dark-blue" >Navigation preload</span> - хороший выход.</h5>
+	<p>Эта функция, которая позволяет осуществлять запросы навигации параллельно с загрузкой в память сервисного рабочего. Но стартовая задержка все ещё присутствует, но она не блокирует сетевой запрос. Для активации этой этой функции вызывается метод <span class="dark-blue">navigationPreload.enable()</span>, или для её деактивации методом <span class="dark-blue">navigationPreload.disable()</span>. Однако, если событию <span class="dark-blue">fetch</span> необходимо её использовать, лутшее место для активации/деактивации - обработчик события сервисного рабочего <span class="dark-blue">activate</span>. </p>
+	<pwa-example-code [context]="{header : 'Активация предзагрузки', ext : 'ws.js'}">
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'activate',</span> <span class="dark-red" >event</span> <span class="dark-blue" >=> &#123;</span>
+			<span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(async</span> <span class="dark-sky" >function() &#123;</span>
+			<span class="grey">// проверка доступности функции</span>
+				<span class="dark-blue" >if (</span><span class="purple" >self.</span><span class="dark-blue" >registration.navigationPreload) &#123; </span>
+				<span class="grey" >// Включение navigation preloads!</span>
+					<span class="dark-blue"  style="font-weight: bold">await</span> <span class="purple"  style="font-weight: bold">self.</span><span  style="font-weight: bold" class="dark-blue" >registration.navigationPreload.enable();
+				&#125;
+			&#125;());
+		&#125;);</span>
+	</pwa-example-code>
+	<h5 id="using-preload" pwa-query-selector>Используем предзагруженный ответ.</h5>
+	<p>Теперь браузер будет выполнять предварительную загрузку навигационных запросов, но все равно придется использовать ответ.
+	<pwa-example-code [context]="{header : 'Использование предзагруженного ответа', ext : 'ws.js'}">
+		<span class="grey">//регистрация пропущена....</span>
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-red" >event</span> <span class="dark-blue" >=> &#123; </span>
+			<span class="dark-red" >event.</span><span class="dark-blue" >respondWith(async </span><span class="dark-sky" >function() &#123; </span>
+				<span class="grey">// Если есть чем ответить, отвечаем из кэша </span>
+				<span class="dark-blue" >const cachedResponse = await </span><span class="dark-red" >caches.</span><span class="dark-blue" >match(</span><span class="dark-red" >event.</span><span class="dark-blue" >request);
+				if (cachedResponse) return cachedResponse;</span>
+				<span class="grey">// Иначе, использовать предзагруженный ответ, если имеется</span>
+				<span class="dark-blue" style="font-weight: 600">const response = await</span> <span style="font-weight: 600" class="dark-red" >event.</span><span style="font-weight: 600" class="dark-blue" >preloadResponse;
+				if (response) return response;</span>
+				<span class="grey">// Иначе, идем в сеть..</span>
+				<span class="dark-blue" >return </span><span class="purple" >fetch(</span><span class="dark-red" >event.</span><span class="dark-blue" >request);
+			&#125;());
+		&#125;);</span>
+	</pwa-example-code>
+	<span class="dark-blue">event.preloadResponse</span> - это промис, который разрешается с объектом ответа, если: </p>
+	<ul>
+		<li>Включена функция предзагрузки навигации.</li>
+		<li>Запрос происходит по глаголу <span class="dark-blue">GET</span>. </li>
+		<li>Запрос является навигационным запросом (смена локации, загрузка страниц, фреймов).</li>
+	</ul>
+	<p>Иначе, это промис вернет <span class="dark-blue">undefined</span>. </p>
+	<pwa-attention [context]="{markColor : '#CD000A', bannerColor : '#FFE0ED', color : '#CD000A'}">
+			<span style="font-weight: 400">Внимание!</span> <span>Не включайте функцию навигации, благополучно забыв её использовать. Если использовать метод </span><span style="font-weight: 500">fetch(event.request)</span>  вместо <span style="font-weight: 500">event.preloadResponse</span>, <span>будет сделано два вызова вместо одного.</span>
+	</pwa-attention>
+	<h5 id="custom-preload" pwa-query-selector>Настройка ответов для предварительных загрузок.</h5>
+	<p>Если странице нужны данные из сети, то самый быстрый способ - запросить их через сервисного рабочего и создать однопоточный ответ, содержащий скомпонованные части из кэша и из сети. К примеру, нам нужно отобразить статью:</p>
+	<pwa-example-code [context]="{header : 'Компоновка нескольких ответов', ext : 'ws.js'}">
+		<span class="grey">регистрация опущена....</span>
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-red" >event</span> <span class="dark-blue" >=> &#123;
+			const url = new </span><span class="purple" >URL(</span><span class="dark-red" >event.</span><span class="dark-blue" >request.url);
+			const includeURL = new </span><span class="purple" >URL(</span><span class="dark-red" >url</span><span class="dark-blue" >);
+			includeURL.pathname += </span><span class="green" >'include';</span>
+			<span class="dark-blue" >if (isArticleURL(</span><span class="dark-red" >url</span><span class="dark-blue" >)) &#123;</span><span class="grey">Если адрес ресурса действительный адрес статьи</span>
+				<span class="dark-red" >event.</span><span class="dark-blue" >respondWith(async </span><span class="dark-sky" >function() &#123;</span>
+					<span class="grey">// Компонует один ответ из нескольких частей</span>
+					<span class="dark-blue" >const parts = [</span>
+						<span class="grey">// Верхняя часть статьи.</span>
+						<span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="green" >'/article-top.include'</span><span class="dark-blue" >),</span>
+						<span class="grey">// Осноное содержимое</span>
+						<span class="purple" >fetch</span><span class="dark-blue" >(includeURL)</span>
+						<span class="grey">// Делаем отскок в кэш, если в сети нет.</span>
+							<span class="dark-blue" >.catch(() => </span><span class="purple" >aches.</span><span class="dark-blue" >match(</span><span class="green" >'/article-offline.include'</span><span class="dark-blue" >)), </span>
+							<span class="grey">// Подвал статьи из кэша...</span>
+						<span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="green" >'/article-bottom.include'</span><span class="dark-blue" >)
+					]</span>
+				<span class="grey">// Объединяем части вместе в функции mergeResponses за пределами примера,
+		которая возвращает метку окончания получения потоков и сам объединенный ответ.</span>
+				<span class="dark-blue" >const &#123; done, response &#125; = await </span><span class="dark-red" >mergeResponses</span><span class="dark-blue" >(parts);</span>
+				<span class="grey">// Придерживаем событие до завершения функции.</span>
+				<span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(done);</span>
+				<span class="grey">// Возвращаем объединенный ответ</span>
+				<span class="dark-blue" >return response;
+			&#125;());
+		&#125;
+	&#125;);</span>
+	</pwa-example-code>
+	<p>Функция <span class="dark-blue">mergeResponses</span> объединяет потоки каждого запроса. Теперь можно отобоазить кэшированный заголовок статьи , пока отрабатывают сетевые потоки. Это быстрее, чем работа с оболочкой приложения, поскольку сетевой запрос выполняется вместе с запросом страницы. Однако запрос для <span class="dark-blue">includeURL</span> получит задержку на время запуска сервисного рабочего, и использование предзагрузки навигационных запросов может это устранить, но тогда нам не нужно предварительно загружать целую страницу, нам нужна только часть. Чтобы это поддерживать, посылается заголовок для каждого предзагружающего запроса:</p>
+	<pwa-example-code [context]="{header : 'Заголовок запроса предзагрузки', ext : ''}">
+		<span class="purple" >Service-Worker-Navigation-Preload : </span><span class="dark-blue" >true</span>
+	</pwa-example-code>
+	<p>Сервер может использовать этот заголовок для ответов различным содержимым на навигационные запросы предзагрузок, вместо обычного навигационного запроса. Просто не забудте добавить <span class="dark-blue">Vary: Service-Worker-Navigation-Preload</span> заголовок, чтобы кэши знали, что этот ответ отличается.<br>
+	Теперь, можно использовать предзагруженный ответ:</p>
+	<pwa-example-code [context]="{header : 'Использование предзагруженного ответа', ext : 'ws.js'}">
+	<span class="grey">//Пытаемся использовать предзагрузку </span>
+	<span class="dark-blue" >const networkContent = </span><span class="purple" >Promise.</span><span class="dark-blue" >resolve(</span><span class="dark-red" >event.</span><span class="dark-blue" >preloadResponse)</span>
+		<span class="grey">// Иначе выполнить нормальный fetch </span>
+		<span class="dark-blue" >.then(</span><span class="dark-red" >r</span> <span class="dark-blue" >=></span> <span class="dark-red" >r</span> <span class="dark-blue" >|| </span><span class="purple" >fetch(</span><span class="dark-red" >includeURL</span><span class="dark-blue" >))</span>
+		<span class="grey">// Откат в кэш, если в сети нет</span>
+		<span class="dark-blue" >.catch(() => </span><span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="green" >'/article-offline.include'</span><span class="dark-blue" >)); </span>
+	<span class="dark-blue" >const parts = [</span>
+		<span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="green" >'/article-top.include'</span><span class="dark-blue" >),</span>
+		<span class="dark-blue" >networkContent,</span>
+		<span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="green" >'/article-bottom'</span><span class="dark-blue" >)
+	];</span>
+	</pwa-example-code>
+	<pwa-attention [context]="{markColor : '#6f95ff', bannerColor : '#e6ecff', color : '#03007B', icon : 'star'}">
+		<span style="font-weight: 400">Примечание : Promise.resolve(event.preloadResponse) </span> <span>означает, что прмис вернет</span> <span style="font-weight: 400">undefined</span><span>, если метод в его параметре вернет</span> <span style="font-weight: 400">undefined</span>. <span>Хорошее место упорядочивания поведения браузеров, которые неподдерживают </span> <span style="font-weight: 400">event.preloadResponse</span>
+	</pwa-attention>
+	<h5 id="change-header" pwa-query-selector>Изменение заголовка. Состояние предварительной загрузки.</h5>
+	<p>По умолчанию, значение заголовка <span class="dark-blue">Service-Worker-Navigation-Preload : true</span>, но можно установить любое значение (к примеру, установить его как идентификатор статьи, которую нужно кэшировать локально, так, чтобы сервер вернул обновленные данные) главное, что бы его правильно обработал сервер. </p>
+	<pwa-example-code [context]="{header : 'Изменение заголовка предварительного кэширования и получение настроек', ext : 'app.js'}">
+		<span class="grey">Изменение заголовка </span>
+		<span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.ready.then(</span><span class="dark-red" >registration</span> <span class="dark-blue" >=> &#123;</span>
+			<span class="dark-blue" >return </span><span class="dark-red" >registration.</span><span class="dark-blue" >navigationPreload.setHeaderValue(</span><span class="dark-sky" >newValue</span><span class="dark-blue" >);
+		&#125;).then(() => &#123;
+			console.log(</span><span class="green" >'Готово!'</span><span class="dark-blue" >);
+		&#125;);</span>
+		
+		<span class="grey">Получим информацию о предзагрузке, используя метод getState</span>
+		<span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.ready.then(</span><span class="dark-red" >registration</span> <span class="dark-blue" >=> &#123;</span>
+			<span class="dark-blue" >return</span> <span class="dark-red" >registration.</span><span class="dark-blue" >navigationPreload.getState();
+		&#125;).then(</span><span class="dark-red" >state</span> <span class="dark-blue" >=> &#123;
+			console.log(</span><span class="dark-red" >state.</span><span class="dark-blue" >enabled);</span><span class="grey" >// boolean</span>
+			<span class="dark-blue" >console.log(</span><span class="dark-red" >state.</span><span class="dark-blue" >headerValue); </span><span class="grey">// string</span>
+		<span class="dark-blue" >&#125;);</span>
+	</pwa-example-code>
+</mat-card>

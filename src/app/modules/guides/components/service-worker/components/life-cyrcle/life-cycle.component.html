@@ -1,0 +1,201 @@
+<mat-card class="pwa-page">
+	<h4 id="life-circle" pwa-query-selector>Жизненный цикл сервисного рабочего.</h4>
+	<p>Предназначение жизненного цикла сервисного рабочего:</p>
+	<ul>
+		<li>Реализация стратегии "сначало вне сети" (offline-first)</li>
+		<li>Позволяет новому сервисному рабочему подготовиться к работе без внезапного прерывания текущего.</li>
+		<li>Уверенность в том, что страницы, входящие в контекст ответственности, управляются тем же сервисным рабочим (или без рабочего вовсе).</li>
+		<li>Контроль работы только одной версии приложения.</li>
+	</ul>
+	<p>Последнее утверждене очень важно. Без сервисного рабочего, пользователи могли загружать сайт в одну браузерную закладку, а позже открыть другую. Это могло привести к работе двух версий одного сайта одновременно. Иногда это допустимо, но если пользователь работает с хранилищем данных, в двух закладках могут находиться данные одной сущности, отличающиеся между собой, что могло вызывать ошибки, или вовсе потерю данных.</p>
+	<h4 id="first-service-worker" pwa-query-selector>Первый сервисный рабочий.</h4>
+	<p>Технологическая цепочка первично-устанавливаемого сервисного рабочего при первом посещении приложения (кратко, с картинкой).</p>
+	<ul>
+		<li>Событие <span class="dark-blue">install</span> - самое первое событие, достигаемое сервисного рабочего, происходит только один раз.</li>
+		<li>Промис, передающийся в метод <span class="dark-blue">installEvent.waitUntil()</span> сигнализирует о продолжительности, успехе или не успехе установки. </li>
+		<li>Сервисный рабочий не будет получать события, такие как <span class="dark-blue">fetch</span> или <span class="dark-blue">push</span>, до момента успешной установки (разрешения промиса), и запуска события <span class="dark-blue">active</span>. </li>
+		<li>По умолчанию, полученные страницы не подключатся к сервисному рабочему, если страница сама не попросит об этом. Потому, нужно обновить страницу для получения эффекта от подключения сервисного рабочего.</li>
+		<li>Для переопределения данного поведения и исключения необходимости явного обновления страниц применяется метод <span class="dark-blue">clients.claim()</span>. </li>
+	</ul>
+	<img class="pageImg" src="assets/icons/life-cycle/first-service-worker.gif">
+	<p>Подробнее через код:</p>
+	<pwa-example-code [context]="{header : 'Проверка поддержки функциональности и подключение', ext : 'index.html'}">
+		<span class="purple" >&#60;!DOCTYPE html&#62;</span>
+			<span class="grey">в элементе "body" появиться картинка собаки через 3 секунды</span>
+		<span class="purple" >&#60;script&#62;</span>
+			<span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.register(</span><span class="green" >'/sw.js'</span><span class="dark-blue" >)
+				.then(</span><span class="dark-red" >reg</span> <span class="dark-blue" >=> console.log(</span><span class="green" >'SW зарегистрирован!' ,</span><span class="dark-red" >reg</span><span class="dark-blue" >))
+				.catch(</span><span class="dark-red" >err</span> <span class="dark-blue" >=> console.log(</span><span class="green" >'Ошибка',</span> <span class="dark-red" >err</span><span class="dark-blue" >));
+			setTimeout(() => &#123;</span>
+				<span class="purple" >const</span> <span class="dark-blue" >img = new</span> <span class="purple" >Image();</span>
+				<span class="dark-blue" >img.src = </span><span class="green" >'/dog.svg';</span>
+				<span class="purple" >document.</span><span class="dark-blue" >body.appendChild(img);
+			&#125;, 3000);</span>
+		<span class="purple" >&#60;/script&#62;</span>
+	</pwa-example-code>
+	<p>Ниже, файл сервисного рабочего, кэширующий изображение кошки, и возвращает его  каждый раз, когда происходить запрос файла собаки <span class="dark-blue">/dog.svg</span>. Однако, если <a target="_blank" href="https://cdn.rawgit.com/jakearchibald/80368b84ac1ae8e229fc90b3fe826301/raw/ad55049bee9b11d47f1f7d19a73bf3306d156f43/">запустить пример</a>, первый запуск отобразит изображение собаки, и при обновлении страницы появиться изображение кошки. </p>
+	<pwa-example-code [context]="{header : 'Файл сервисного рабочего', ext : 'sw.js'}">
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'install',</span> <span class="dark-red" >event</span> <span class="dark-blue" >=> &#123;
+			console.log(</span><span class="green" >'устанавливается версия 1'</span><span class="dark-blue" >);</span>
+			<span class="grey">// кэшируется файл кошки </span>
+			<span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(</span>
+				<span class="purple" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'static-v1'</span><span class="dark-blue" >).then(</span><span class="dark-red" >cache</span> <span class="dark-blue" >=> </span><span class="dark-red" >cache.</span><span class="dark-blue" >add(</span><span class="green" >'/cat.svg'</span><span class="dark-blue" >))
+			);
+		&#125;);</span>
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'activate',</span> <span class="dark-red" >event </span><span class="dark-blue" >=> &#123;
+			console.log(</span><span class="green" >'Версия 1 готова обрабатывать события fetch!'</span><span class="dark-blue">);
+		&#125;);</span>
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-red" >event</span> <span class="dark-blue" >=> &#123;
+			const url = new</span> <span class="purple" >URL(</span><span class="dark-red" >event.</span><span class="dark-blue" >request.url);</span>
+			<span class="grey">// передать файл кошки из кэша, если запрос на сайт и путь '/dog.svg'</span>
+			<span class="dark-blue" >if (url.origin == location.origin && url.pathname == </span><span class="green" >'/dog.svg'</span><span class="dark-blue" >) &#123;</span>
+				<span class="dark-red" >event.</span><span class="dark-blue" >respondWith(</span><span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="green" >'/cat.svg'</span><span class="dark-blue" >));
+			&#125;
+		&#125;);</span>
+	</pwa-example-code>
+	<h5 id="scope-control" pwa-query-selector>Контекст и управление.</h5>
+	<p>По умолчанию, контектом ответственности регистрации сервисного рабочего является <span class="dark-blue">./</span>, относительно <span class="dark-blue">URL</span> скрипта. Если сервисный рабочий регистрируется по локатору ресурса <span class="green">//example.com/foo/sw.js</span>, то его контекстом ответственности является локатор <span class="green">//example.com/foo/</span>, т.е. все, что находиться в этой папке, называемые <span class="dark-blue">clients</span> (клиенты). Сервисгый рабочий может контролировать только своих клиентов находящихся в контексте его ответственности. Как только клиенты встали под ответственность сервисного рабочего, все запросы к этим клиентам начинают осуществляться через этого сервисного рабочего, вызывая событие <span class="dark-blue">fetch</span>. Можно определять, являктся ли клиент под контролем через свойство <span class="dark-blue">navigator.serviceWorker.controller</span>, которое будет иметь тип сервисного рабочего или <span class="dark-blue">null</span>, в случае отсутствия контроля над клиентом. </p>
+	<h5 id="download-parse" pwa-query-selector>Загрузка, анализ, выполнение.</h5>
+	<p>Самый первый сервисный рабочий загружается, когда вызывается метод регистрации <span class="dark-blue">serviceWorker.register('/sw.js')</span>. Если скрипт неудачно загружен, анализирован или вброшена ошибка во время установки, это метод вернет отвергнутый промис, и сервисный рабочий будет отброшен. Инструмент разработчика покажет ошибку в консоли, и в секции сервисного рабочего на закладке <span class="dark-blue">application</span> </p>
+	<img  class="registerError" src="assets/icons/life-cycle/register-fail.png">
+	<h5 id="first-install" pwa-query-selector>Установка.</h5>
+	<p>Первое событие, которое достигает сервисного рабочего - <span class="dark-blue">install</span>. Оно вызывается, сигнализируя процесс установки и происходит только один раз для каждого сервисного рабочего. Если изменить скрипт сервисного рабочего тогда браузер будет его рассматривать как скрипт нового сервисного рабочего и вызовет его событие <span class="dark-blue">install</span>. Это событие является сигналом того, что можно заполнить кэш приложения теми ресурсами, которые необходимы приложению для первоначального отображения его интерфейса. В обоаботчике этого события можно применить метод <span class="dark-blue">event.waitUntil()</span> для приостановки регистрации и промис, передающийся в метод, позволит браузеру понять как закончилось кэширование ресурсов и было ли оно успешным. Если промис отвергнут, это является сигналом того, что установка неудачна и сервисный рабочий будет отброшен, он не сможет контролировать клиентов, и не сможет вернут картинку <span class="green">"cat.svg"</span> из кэша в событии <span class="dark-blue">fetch</span>. </p>
+	<h5 id="first-activate" pwa-query-selector>Активация.</h5>
+	<p>Как только, сервисный рабочий готов контролировать клиентов и обрабатывать события <span class="dark-blue">push</span>, запускается событие <span class="dark-blue">activate</span>, но это не означает, что клиенты сразу начинают обслуживаться через сервисного рабочего.<br>
+	Первый раз, когда запускается <a target="_blank" href="https://cdn.rawgit.com/jakearchibald/80368b84ac1ae8e229fc90b3fe826301/raw/ad55049bee9b11d47f1f7d19a73bf3306d156f43/">демка</a> (если запустится кошка, необходимо на этой странице перед запуском войти в инструменты разработчика и на вкладке приложения, слева выбрать <span class="dark-blue">Service Workers</span>, и снять с регистрации уже установленного сервисного рабочего, нажав <span class="dark-blue">Unregister</span> и перезапустить страницу) запрос файла <span class="dark-blue">dog.svg</span> происходит после события активации, но запрос не обрабатывается и картинка собаки отображается вместо картинки кошки. Это поведение по умолчанию, если на странице не будет использована технология сервисного рабочего и все запросы будут проходить через браузер, на прямую к серверу. Поэтому, для получения контроля сервисным рабочим над уже открытыми клиентами, необходим перезапуск / закрытие открытых клиентов, и при повторном запуске клиент будет полностью находиться под управлением сервисного рабочего. Перезапустите страницу и увидите картинку кошки, потому, что все запросы теперь пошли через событие <span class="dark-blue">fetch</span> сервисного рабочего.<br>
+	Перехват контроля над клиентами может быть произведен и не прибегая к активным действиям, а использовать метод <span class="dark-blue">clients.claim()</span> в обработчике события активации сервисного рабочего. Здесь находиться другая <a target="_blank" href="https://cdn.rawgit.com/jakearchibald/80368b84ac1ae8e229fc90b3fe826301/raw/df4cae41fa658c4ec1fa7b0d2de05f8ba6d43c94/">демка</a>, использующая этот метод в обработчике события <span class="dark-blue">active</span>. При первом старте страницы изображение кошки появиться сразу, без необходимости перегружать её явно. Если клиент, который должен загружать сервисный рабочий загружается не из сети, этот метод может быть неподходящим, поскольку сервисный рабочий прекращает контроль клиентов, которые загружены без его участия.</p>
+	<h4 id="updating" pwa-query-selector>Обновление сервисного рабочего.</h4>
+	<p>Краткая последовательность действий ниже:</p>
+	<ul>
+		<li>Обновление сервисного рабочего запускается:
+			<ul>
+				<li>При переходи на страницу находящийся в контексте ответственности сервисного рабочего.</li>
+				<li>При возникновении функциональных событий <span class="dark-blue">push</span> и <span class="dark-blue">sync</span>, если не происходила проверка обоновления в течении 24 часов.  </li>
+				<li>При вызове метода <span class="dark-blue">.register()</span> ТОЛЬКО, если <span class="dark-blue">URL</span> сервисного рабочего обновился. </li>
+			</ul>
+		</li>
+		<li>Заголовки кэширования скрипта сервисного рабочего учитываются (вплоть до 24 часов) при получении обновленного скрипта. Такое поведение можно сделаем выбираемым, а так же установим заголовок <span class="dark-blue">max-age = 0</span> на скрипте сервисного рабочего.</li>
+		<li>Сервисный рабочий считается измененным, если его размер файла отличается от размера файла предыдущего сервисного рабочего. Так же расширим это поведение, добавив настройку импортируемых скриптов/модулей.</li>
+		<li>Обновленный сервисный рабочий запускается отдельно от существующего и получает своё событие <span class="dark-blue">install</span>. </li>
+		<li>Если новый сервисный рабочий имеет не положительный статус-код (к примеру, 404), неудачно анализирован, вброшена ошибка выполнения или промис события установки отвергнут, новый сервисный рабочий отбрасывается, но старый остается активным.</li>
+		<li>Если устанока прошла успешно, обновленный рабочий войдет в режим ожидания, до момента, когда старый сервисный рабочий не потеряет контроль над клиентами. Ни один из клиентов не будет прерван или переопределен.</li>
+		<li>Режим ожидания может быть отключен, применив метод <span class="dark-blue">self.skipWaiting()</span>, что явно передает контроль над всеми клиентами новому сервисному рабочему, как только его установка завершиться. </li>
+	</ul>
+	<p>Обновление сервисного рабочего схематично ниже:</p>
+	<img  class="registerError" src="assets/icons/life-cycle/change-service-worker.gif">
+	<p>Легенда такая : меняем скрипт сервисного рабочего, и теперь загрузим вместо файла кошки файл лошади.</p>
+	<pwa-example-code [context]="{header : 'Обновление файла сервисного рабочего', ext : 'sw.js'}">
+		<span class="dark-blue" >const expectedCaches = [</span><span class="green" >'static-v2'</span><span class="dark-blue" >];</span>
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'install'</span><span class="dark-red" >, event </span><span class="dark-blue" >=> &#123;
+			console.log(</span><span class="green" >'Устанавливается версия 2'</span><span class="dark-blue" >);</span>
+			<span class="grey">// кэшируем файл лошади в кэш "static-v2"</span>
+			<span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(</span>
+				<span class="purple" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'static-v2'</span><span class="dark-blue" >).then(</span><span class="dark-red" >cache</span> <span class="dark-blue" >=> </span><span class="dark-red" >cache.</span><span class="dark-blue" >add(</span><span class="green" >'/horse.svg'</span><span class="dark-blue" >))
+			);
+		&#125;);</span>
+		
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'activate',</span> <span class="dark-red" >event</span> <span class="dark-blue" >=> &#123;</span>
+			<span class="grey">// Удалить любые кэши, которые не находятся в массиве кэшей expectedCaches
+			// , что позволит избавиться от  кэша static-v1</span>
+			<span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(</span>
+				<span class="purple" >caches.</span><span class="dark-blue" >keys().then(</span><span class="dark-red" >keys</span> <span class="dark-blue" >=></span> <span class="purple" >Promise.</span><span class="dark-blue" >all(</span>
+					<span class="dark-red" >keys.</span><span class="dark-blue" >map(</span><span class="dark-red" >key</span> <span class="dark-blue" >=> &#123;
+						if (!expectedCaches.includes(</span><span class="dark-red" >key</span><span class="dark-blue" >)) &#123;
+							return </span><span class="purple" >caches.</span><span class="dark-blue" >delete(</span><span class="dark-red" >key</span><span class="dark-blue" >);
+				&#125;
+			&#125;)
+		)).then(() => &#123;
+		console.log(</span><span class="green" >'Теперь вторая версия рабочего готова обрабатывать события fetch'</span><span class="dark-blue" >);
+				&#125;)
+			);
+		&#125;);</span>
+		
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-red" >event</span> <span class="dark-blue" >=> &#123;
+			const url = new</span> <span class="purple" >URL(</span><span class="dark-red" >event.</span><span class="dark-blue" >request.url); </span>
+			<span class="grey">// отправить картинку лошади из кэша, если запрос на источник и имя файла '/dog.svg' </span>
+			<span class="dark-blue" >if (url.origin == location.origin && url.pathname == </span><span class="green" >'/dog.svg'</span><span class="dark-blue" >) &#123;</span>
+				<span class="dark-red" >event.</span><span class="dark-blue" >respondWith(</span><span class="purple" >caches</span><span class="dark-blue" >.match(</span><span class="green" >'/horse.svg'</span><span class="dark-blue" >));
+			&#125;
+		&#125;);</span>
+	</pwa-example-code>
+	<p>Проверим <a target="_blank" href="https://cdn.rawgit.com/jakearchibald/80368b84ac1ae8e229fc90b3fe826301/raw/ad55049bee9b11d47f1f7d19a73bf3306d156f43/index-v2.html">демо конека</a> и должны увидеть ... кошку. Это почему?</p>
+	<h5 id="updating-install" pwa-query-selector>Установка.</h5>
+	<p>Новый сервисный рабочий подключает кэш новой версии и грузит в него лошадь. Значит, создается новый кэш без удаления предыдущего, поскольку предыдущий сервисный рабочий все ещё используется. Такой подход создает версионированный кэш, наподобие нового пакета исполняемых файлов приложения. </p>
+	<h5 id="updating-waiting" pwa-query-selector>Ожидание.</h5>
+	<p>После того, как сервисный рабочий успешно установлен, он придерживает свою активацию до тех пор, пока старый рабочий контролирует клиентов. Теперь браузер делает так, что только одна версия сервисного рабочего активна. Если посмотреть на <a target="_blank" href="https://cdn.rawgit.com/jakearchibald/80368b84ac1ae8e229fc90b3fe826301/raw/ad55049bee9b11d47f1f7d19a73bf3306d156f43/index-v2.html">демо лошадки</a>, оно все еще не активированно. Можно увидет оранжевую точку ожидающего активации сервисного рабочего, загружающего лошадь на закладке приложений в инструментах разработчика.</p>
+	<img class="registerError" src="assets/icons/life-cycle/waiting.png">
+	<p>Даже, если это демо открыто на одной закладке, обновление страницы недостаточно для активации сервисного рабочего лошадки. Это происходит из-за особенностей работы навигационной системы браузера. При навигации на другой адрес, текущая страница не удаляется пока не будут получены заголовки новой локации, и даже тогда текущая страница может оставаться на закладке если ответ имеет заголовок <span class="dark-blue">Content-Disposition</span>. Из-за этого перехлеста текущий сервисный рабочий всегда контролирует клиентов во время обновления. Чтобы обновить ожидающий активации скрипт, нужно закрыть или уйти со всех закладок, использующих старого сервисного рабочего. Затем перейти на <a target="_blank" href="https://cdn.rawgit.com/jakearchibald/80368b84ac1ae8e229fc90b3fe826301/raw/ad55049bee9b11d47f1f7d19a73bf3306d156f43/index-v2.html">демо</a> снова, и там должна быть лошадка. Такой поведенческий шаблон аналогичен шаблону обновлений Chrome, который загружает обновления в кэш, но не применяет их до закрытия и последующего открытия самого браузера.</p>
+	<h5 id="updating-activate" pwa-query-selector>Активация.</h5>
+	<p>Это событие возникает как только старый сервисный рабочий отключается и новый сервисный рабочий получает полный контроль над клиентами. Отличное место сделать что-то, что невозможно было зделать из-за работы старого сервисного рабочего (перемещение баз данных или отчистка кэшей). В демке выше, имеется список кэшей, который содержит ижентификаторы тех кэшей, которые нужно оставить в работе, а те кэши, что не входят в этот список, удалить в обработчике события активации (в примере выше это кэш "static-v1"). Если передать промис в метод <span class="dark-blue">event.waitUntil()</span>, то затормозятся события  <span class="dark-blue"> fetch, push, sync</span> и др. до разрешения промиса. И когда эмитируется событие <span class="dark-blue">fetch</span>, сервисный рабочий уже активирован. </p>
+	<pwa-attention  [context]="{markColor : '#6f95ff', bannerColor : '#e6ecff', color : '#03007B'}">
+		<span style="font-weight: 400">Внимание :</span>
+		<span>Интерфейс cache Storage API является первичным хранилищем (как localStorage и IndexedDB).Если запущено много сайтов на одном домене (к примеру yourname.github.io/myapp), будте осторожны и не удалите кэши соседних сайтов. Для исключения такой возможности, следует именам кэшам присваивать уникальный префикс (к примеру, myapp-static-v1), и не касаться кэшей имеющих определенный префикс.</span>
+	</pwa-attention >
+	<h5 id="skip-waiting" pwa-query-selector>Пропуск фазы ожидания.</h5>
+	<p>Фаза ожидания сервисного рабочего означает, что в текущий момент работает только одна версия вашего сайта, но если подобное поведение (состояние ожидания) не нужно, его можно пропустить и явно активировать нового сервисного рабочего вызвав метод <span class="dark-blue">self.skipWaiting()</span>. Это заставит нового сервисного рабочего отключить текущего сервисного рабочего и активироваться сразу при входе в фазу ожидания без необходимости ожидания закрытия (перезапуска) клиентов. Этот вызов не пропускает фазу установки, а только фазу ожидания. И неважно когда запущен этот метод, перед началом фазы ожидания или в её время. Обычно, такой вызов приходится на обработчик события <span class="dark-blue">install</span> </p>
+	<pwa-example-code [context]="{header : 'Пропуск фазы ожидания', ext : 'sw.js'}">
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'install',</span> <span class="dark-red" >event</span> <span class="dark-blue" >=> &#123;</span>
+			<span class="purple" >self.</span><span class="dark-blue" >skipWaiting();</span>
+			<span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(</span>
+				<span class="grey">// кэширование клиентови пр.</span>
+			<span class="dark-blue" >);
+		&#125;); </span>
+	</pwa-example-code>
+	<p>Этот метод может быть вызван в сдедствии вызова метода общения между пользователем (DOM) и сервисным рабочим <span class="dark-blue">postMessage()</span>, при необходимости обеспечить пропуск фазы ожидания через интерактивность. На этой <a target="_blank" href="https://cdn.rawgit.com/jakearchibald/80368b84ac1ae8e229fc90b3fe826301/raw/ad55049bee9b11d47f1f7d19a73bf3306d156f43/index-v3.html">демке</a> увидим корову, без необходимости совершать дополнительную навигацию или закрытие вкладок. Мы увидим корову, если новый сервисный рабочий получил событие <span class="dark-blue">fetch</span>, установился и активировался до того, как страница попыталась загрузить изображение.  </p>
+	<pwa-attention  [context]="{markColor : '#6f95ff', bannerColor : '#e6ecff', color : '#03007B'}">
+		<span style="font-weight: 400">Внимание! : skipWaiting()</span>
+		<span>означает, что новый сервисный рабочий начал контролировать клиентов, которые были загружены старым сервисным рабочим и на нем для этих клиентов не вызывалось событие</span> <span class="dark-red">fetch</span> <span>, а запустится при перезапуске страницы. Поэтому, если для логики кода важен вызов этого события, не применяйте пропуск фазы ожидания. </span>
+	</pwa-attention >
+	<h5 id="manual-updates" pwa-query-selector>Ручное обновление.</h5>
+	<p>Как было упомянуто выше, браузер проверяет обновления автоматически после каждой навигации и функциональных событий, но можно эту проверку запустить вручную, используя метод <span class="dark-blue">update()</span> экземпляра регистрации. Если пологать, что пользователь будет пользоваться сайтом продолжительное время без перезагрузки, можно запускать ручную проверку с интервалом, скажем, в час:</p>
+	<pwa-example-code [context]="{header : 'Ручной запуск проверки обновлений', ext : 'sw.js'}">
+		<span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.register(</span><span class="green" >'/sw.js'</span><span class="dark-blue" >).then(</span><span class="dark-red" >reg</span> <span class="dark-blue" >=> &#123;</span>
+			<span class="grey">// Немного позже с задержкой…</span>
+			<span class="dark-red" >reg.</span><span class="dark-blue" >update();
+		&#125;);</span>
+	</pwa-example-code>
+	<h4 id="development" pwa-query-selector>Облегчаем разработку.</h4>
+	<p>Есть несколько свойств в инструментарии разработчика, обдегчающих разработку с сервисными рабочими.</p>
+	<ul>
+		<li><span class="dark-blue">Update on reload</span> (Обновление при загрузке) - изменяет жизненный цикл сервисного рабочего, обновляя его при каждой навигации, без необходимлсти перезагружать клиента дважды или закрывать закладки при обновлении сервисного рабочего, а именно:
+			<ul>
+				<li>Перезагружает сервисного рабочего.</li>
+				<li>Устанавливает его как новую версию, даже если объем файла вновь загруженного сервисного рабочего и старого совпадают, а значит возникает новое событие <span class="dark-blue">install</span> и обновление кэша. </li>
+				<li>Пропускает фазу ожидания вновь загруженного рабочего, и сразу его активирует, т.е. он сразу получает контроль над клиентами старого рабочего. </li>
+				<li>Осуществляет навигацию (переход на новый URL).</li>
+			</ul>
+		</li>
+		<li><span class="dark-blue">Offline</span> - отключает браузер от сети, давая возможность проверить работу сервисного рабочего в безсетевом режиме. </li>
+		<li><span class="dark-blue" >Show all</span> - отобразить всех сервисных рабочих, зарегичтрированных в браузере.</li>
+		<li>Ссылка для пропуска ожидания <span class="dark-blue">skipWaiting</span>. Нажатие на эту ссылку в процессе ожидания активации нового сервисного рабочего, немедленно приведет его в состояние активации, передав ему полную поддержку клиентов старого сервисного рабочего.</li>
+	</ul>
+	<h4 id="handling-updates" pwa-query-selector>Обработка обновлений.</h4>
+	<p> Для полного наблюдения за циклом обновления сервисного рабочего используются несколько свойств:</p>
+	<pwa-example-code [context]="{header : 'Свойства цикла обновления', ext : 'index.html'}">
+		<span class="purple" >&#60;script&#62;</span>
+			<span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.register(</span><span class="green" >'/sw.js'</span><span class="dark-blue" >).then(</span><span class="dark-red" >reg</span> <span class="dark-blue" >=> &#123; </span>
+				<span class="dark-red" >reg.</span><span class="dark-blue" >installing;</span> <span class="grey" >// Устанавливающийся сервисный рабочий или undefined </span>
+				<span class="dark-red" >reg.</span><span class="dark-blue" >active;</span> <span class="grey" >// Активный рабочий или undefined </span>
+				<span class="dark-red" >reg.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'updatefound',</span> <span class="dark-blue" >() => &#123; </span> <span class="grey">//При нахождении
+				нового сервисного рабочего
+				//Он появиться в reg.installing!</span>
+					<span class="dark-blue" >const newWorker = </span><span class="dark-red" >reg.</span><span class="dark-blue" >installing;
+					newWorker.state;</span>
+					<span class="grey">// Может иметь значения :
+					// "installing" - событие install в процессе обработки
+					// "installed"  - событие install завершилось
+					// "activating" - событие activate в процессе обработки
+					// "activated"  - событие active завершилось
+					// "redundant"  - сервисный рабочий отбрасывается (лишний). Или неудача в процессе обработки события install, или он был замещен новой версией</span>
+					<span class="dark-blue" >newWorker.addEventListener(</span><span class="green" >'statechange',</span> <span class="dark-blue" >() => &#123;</span>
+						<span class="grey">// статус нового сервисного рабочего изменился</span>
+					<span class="dark-blue" >&#125;);
+				&#125;);
+			&#125;);</span>
+			<span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.addEventListener(</span><span class="green" >'controllerchange',</span> <span class="dark-blue" >() => &#123;</span>
+				<span class="grey">// Событие запускается, когда сервисный рабочий, контролирующий страницу изменяется, к примеру
+				//новый сервисный рабочий, проскочив фазу ожидания стал активным </span>
+			<span class="dark-blue" >&#125;);</span>
+		<span class="purple" >&#60;/script&#62;</span>
+	</pwa-example-code>
+</mat-card>

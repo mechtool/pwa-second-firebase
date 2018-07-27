@@ -1,0 +1,614 @@
+<mat-card class="pwa-page" >
+	<h4 id="intro" pwa-query-selector>Входящие оповещения. Введение.</h4>
+	<p>Входящие уведомления (оповещения) - это сообщения, которые появляются (всплывают) на устройстве пользователя. Оповещения могут быть запущены локально, посредствам открытыго приложениея или получены с сервера, даже, если приложение находиться вне фокуса или вообще не работает. Они позволяют пользователю получать своевременные новости или обновления, временно пробуждая небольшую часть исполнительного кода для реализации функциональности.<br>
+	Сборка этих приложений производиться при помощи двух программных интерфейсов: <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API">Notification API</a> и <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/Push_API">Push API</a>. Первый, используется для отображения системных уведомлений пользователю. Второй, позволяет сервисному рабочему обрабатывать входящие сообщения от сервера, даже, если приложение не активно. Эти два интерфейса основываются на третьем - <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API">Service Worker API</a>, ответственным за реагирование на событие получения сообщения и перевод его в нужное приложение.</p>
+	<pwa-attention [context]="{backgroundColor : '#e6ecff', color : '#35739a'}">
+		<span style="font-weight: 400">Внимание :</span>
+		<span class="blue">Сервисному рабочему требуется безопасное происхождение документа, поэтому тестирование входящих уведомлений требует работающего локального сервера.</span>
+	</pwa-attention>
+	<h5 id="terms" pwa-query-selector>Терминология входящих уведомлений</h5>
+	<ul>
+		<li><span class="dark-blue">Notification</span> - сообщение, отображаемое пользователю вне интерфейса приложения (браузера).</li>
+		<li><span class="dark-blue">Push Message</span> - сообщение, отправленное с сервера приложения клиенту.</li>
+		<li><span class="dark-blue">Push Notification</span> - оповещение, созданное в ответ на входящее сообщение (push message). </li>
+		<li><span class="dark-blue">Notification API</span> - интерфейс, использующийся для конфигурации и отображения уведомлений пользователю.</li>
+		<li><span class="dark-blue">Push API</span> - интерфейс, использующийся при подписки приложения на взаимодействие с <span class="dark-blue">Push</span> сервисом и получения сообщений от этого сервиса сервисным рабочим. </li>
+		<li><span class="dark-blue" >Web Push</span> - неформальный термин, относящийся к процессу или компонентам, использующиеся в процессе передачи сообщения от сервера к клиенту. </li>
+		<li><span class="dark-blue">Push Service</span> - система маршрутизации входящих сообщений от <span class="blue">Push</span> сервера к клиенту. Каждый браузер реализует собственную функциональность такой системы. </li>
+		<li><span class="dark-blue">Web Push Protocol</span> - протокол, описывающий то, как сервер приложения или браузер взаимодейтвует с <span class="dark-blue">Push</span> сервисом. </li>
+	</ul>
+	<h4 id="understanding" pwa-query-selector>Логическая последовательность входящих уведомлений для Web</h4>
+	<p>Входящие оповещения позволяют приложению выйти за пределы браузера и привлечь внимание пользователя. Они могут выполнять различные задачи: сообщать информацию о важных событиях приложения, отображать иконку или не большую часть текста, на которую пользователь может нажать, открыв приложение или его сайт. <br>
+		В него можно интегрировать элементы интерфейса (кнопки и пр. элементы управления) для взаимодействия пользователя с приложением напрямую или с его сайтом. Для полноценной работы входящих уведомлений существуют несколько технологий, работающих вместе. Браузеры, поддерживающие входящие оповещения реализуют собственный удаленный сервис уведомлений, который является системой, обрабатывающей сообщения и маршрутизирующие их нужным клиентам. Сообщения (Push Message), предназначенные стать оповещениями (Push Notification) направляются от сервера приложения (сайта) на этот сервис (Push Service), и содержат информацию, необходимую этому сервису для формирования оповещения, передаваемого затем клиенту (устройство пользователя), которое пробуждает в нем нужного сервисного рабочего. При получении оповещения активируется нужный сервисный рабочий, только на время обработки оповещения, после которой становиться вновь не активным. Благодаря такой структуре, оповещение является спаренным с сервисным рабочим и он может прослушивать различные события оповещения без использования дополнительных ресурсов. При пользовательском взаимодействии с оповещением (нажатие или закрытие), сервисный рабочий вновь активируется на короткое время обработки этого взаимодействия, а затем опять деактивируется.</p>
+	<h3 id="notificationsApi" pwa-query-selector>Интерфейс уведомлений (<a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API">Notification API</a>)</h3>
+	<p>Это - интерфейс, позволяющий отображать оповещение пользователю, довольно мощный и простой в использовании. Во многом, использует механизмы нативных приложений. Этот интерфейс неформально можно разделить на две основные области (не является частью спецификации): интерфейс вызова (Invocation API) - контролирующие визуализацию (внешний вид) диалогового окна оповещения, включая стилизацию и шаблон вибрации устройства и интерфейс взаимодействия (Interaction AP) - контролирующий взаимодействие пользователя с диалоговым окном оповещения, обрабатывая его через  сервисного рабочего.</p>
+	<h5 id="permissionRequest" pwa-query-selector>Запрос разрешения пользователя.</h5>
+	<p>Для запуска механизма входящих уведомлений, необходимо запросить разрешение пользователя. Ниже, образец кода, позволяющий вызвать всплывающее окно с просьбой о полномочиях уведомлений. Он выполняется в основном JavaScript файле приложения (не в файле сервисного рабочего).</p>
+	<pwa-example-code [context]="{header : 'Запрос разрешения пользователя', ext : 'main.js'}">
+	<span class="purple" >Notification.</span><span class="dark-blue" >requestPermission().then(</span><span class="dark-sky" >function(</span><span class="dark-red" >status</span><span class="dark-blue" >) &#123;
+	console.log(</span><span class="green" >'Notification permission status:'</span> <span class="dark-red" >, status</span><span class="dark-blue" >);
+	&#125;); </span>
+	</pwa-example-code>
+	<p>Метод <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/Notification/requestPermission">requestPermission</a> вызывается на свойстве глобального объекта <span class="dark-blue">Notification</span>. В результате, отображается всплывающее окно, запрашивающее разрешение у пользователя на применения к этому приложению техники оповещения. Ответ пользователя сохраняется соответственно приложению, поэтому повторный запрос разрешения вернет последний пользовательский выбор. Как только пользователь выдал разрешение, приложение сможет получать и отображать входящие оповещения.</p>
+	<h5 id="notificationDisplay" pwa-query-selector>Отображение оповещения.</h5>
+	<p>Для отображения полученного сообщения, используется метод <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration/showNotification">showNotification</a>, вызванный из основного скрипта приложения. Он вызывается на объекте регистрации сервисного рабочего.</p>
+	<pwa-example-code [context]="{header : 'Отображение оповещения', ext : 'main.js'}">
+		<span class="dark-sky" >function</span> <span class="dark-blue" >displayNotification() &#123;
+	if (</span><span class="purple" >Notification.</span><span class="dark-blue" >permission == </span><span class="green" >'granted'</span><span class="dark-blue" >) &#123;</span>
+				<span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.getRegistration().then(</span><span class="dark-sky" >function(</span><span class="dark-red" >reg</span><span class="dark-blue" >) &#123;</span>
+					<span class="dark-red" >reg.</span><span class="dark-blue" >showNotification(</span><span class="green" >'Hello world!'</span><span class="dark-blue" >);
+		&#125;);
+	  &#125;
+    &#125;</span>
+	</pwa-example-code>
+	<p>Этот метод создает оповещение через активного сервисного рабочего, поэтому, события взаимодействия с оповещением будут проходить через этого сервисного рабочего. </p>
+	<pwa-attention [context]="{backgroundColor : '#e6ecff', color : '#35739a'}">
+		<span style="font-weight: 400">Внимание :</span>
+		<span class="blue">Так же, можно создать оповещение, использовав <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/Notification/Notification">конструктор оповещения</a>. Однако, оповещение, созданное подобным образом не является спаренным с сервисным рабочим, и поэтому, не интерактивно.</span>
+	</pwa-attention><br>
+	<h5 id="addOptions" pwa-query-selector>Добавление свойств оповещения.</h5>
+	<p>Метод <span class="dark-blue">showNotification</span> имеет необязательный второй аргумент - объект конфигурации оповещения. Пример ниже демонстрирует применение некоторых свойств конфигурации (полный <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration/showNotification">список свойств</a>): </p>
+	<pwa-example-code [context]="{header : 'Добавление свойств оповещения', ext : 'main.js'}">
+	<span class="dark-sky" >function </span><span class="dark-blue" >displayNotification() &#123;
+	if (</span><span class="purple" >Notification.</span><span class="dark-blue" >permission == </span><span class="green" >'granted'</span><span class="dark-blue" >) &#123;</span>
+				<span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.getRegistration().then(</span><span class="dark-sky">function(</span><span class="dark-red" >reg</span><span class="dark-blue" >) &#123;
+		var options = &#123;</span>
+							<span class="brown" >body : </span><span class="green" >'Here is a notification body!'</span><span class="brown" >,
+		   icon : </span><span class="green" >'images/example.png'</span><span class="brown" >,
+		   vibrate : [</span><span class="dark-blue" >100, 50, 100</span><span class="brown" >],
+		   data : </span><span class="dark-blue" >&#123; </span>
+							<span class="brown" >dateOfArrival : </span><span class="purple" >Date.</span><span class="dark-blue" >now(),</span>
+							<span class="brown" >primaryKey : </span><span class="dark-blue" >1
+		    &#125;
+	      &#125;;</span>
+						<span class="dark-red" >reg.</span><span class="dark-blue" >showNotification(</span><span class="green" >'Hello world!'</span><span class="dark-blue" >, options);
+		&#125;);
+	&#125;
+  &#125; </span>
+	</pwa-example-code>
+	<ul>
+		<li><span class="dark-blue">body</span> - основное содержание оповещения, должно передавать пользователю достаточно информации для реагирование на оповещение (закрыть или перейти по ссылке и т.д.) </li>
+		<li><span class="dark-blue">icon</span> - адрес к изображению оповещения.(к примеру: изображение аватарки отправителя).</li>
+		<li><span class="dark-blue">vibrate</span> - определяет шаблон последовательностей вибраций устройства при получении оповещения. В примере выше, диапазон вибраций составляет: 100ms - вибрация, 50ms - пауза, 100ms - вибрация. </li>
+		<li><span class="dark-blue">data</span> - свойство для установки произвольных данных, которые могут быть получены сервисным рабочим при событии взаимодействия пользователя и оповещением. </li>
+	</ul>
+	<p>В <a target="_blank" href="https://tests.peter.sh/notification-generator/">этом</a> приложении можно по-экспериментировать с различными свойствами оповещения. </p>
+	<h5 id="addActions" pwa-query-selector>Добавление интерактивности в оповещение.</h5>
+	<p>Простые оповещения отображают информацию пользователю и обрабатывают интерактивность при нажатии. Так же, можно добавить возможность контекстных взаимодействий в оповещение для того, что бы пользователь быстро смог перейти на сайт или сервис приложения без открытия его в браузере. Пример ниже:</p>
+	<pwa-example-code [context]="{header : 'Добавление интерактивности в оповещение', ext : 'main.js'}">
+	<span class="dark-sky" >function</span> <span class="dark-blue" >displayNotification() &#123;
+		if (</span><span class="purple" >Notification.</span><span class="dark-blue" >permission == </span><span class="green" >'granted'</span><span class="dark-blue" >) &#123;</span>
+			<span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.getRegistration().then(</span><span class="dark-sky" >function(</span><span class="dark-red" >reg</span><span class="dark-blue" >) &#123;
+				var options = &#123;</span>
+					<span class="brown" >body : </span><span class="green" >'Это - тело оповещения!'</span><span class="brown" >,
+					icon : </span><span class="green" >'images/example.png'</span><span class="brown" >,
+					vibrate : [</span><span class="dark-blue" >100, 50, 100</span><span class="brown" >],
+					data : </span><span class="dark-blue" >&#123;</span>
+						<span class="brown" >dateOfArrival : </span><span class="purple">Date.</span><span class="dark-blue" >now(),</span>
+						<span class="brown" >primaryKey : </span><span class="dark-blue" >1
+					&#125;,</span>
+					<span class="brown" >actions </span><span class="dark-blue" >: [
+						&#123;   action : </span><span class="green" >'explore'</span><span class="dark-blue" >,
+							title : </span><span class="green" >'Заголовок оповещения'</span><span class="dark-blue" >,
+							icon : </span><span class="green" >'images/checkmark.png'</span><span class="dark-blue" >&#125;,
+						&#123;   action : </span><span class="green" >'close'</span><span class="dark-blue" >,
+							title : </span><span class="green" >'Закрыть оповещение'</span><span class="dark-blue" >,
+							icon : </span><span class="green" >'images/xmark.png'</span><span class="dark-blue" >
+						&#125;,
+					]
+				&#125;;</span>
+				<span class="dark-red" >reg.</span><span class="dark-blue" >showNotification(</span><span class="green" >'Привет мир!'</span><span class="dark-blue" >, options);
+			&#125;);
+		&#125;
+	&#125; </span>
+	</pwa-example-code>
+	<p>Что бы создать оповещение с набором возможных пользовательских взаимодействий, в свойство <span class="dark-blue">action</span> добавляется массив объектов взаимодействий, которые определяют элементы управления (кнопки), отображающиеся пользователю. Эти объекты могут содержать строку идентификатора действия (action), заголовок (title), содержащий текст, отображаемый пользователю, и ссылку на изображение (icon), отображаемое за элементом действия. </p>
+	<h5 id="eventListen" pwa-query-selector>Прослушивание событий</h5>
+	<p>Отображение оповещения - это первый шаг. Теперь необходимо обработать пользовательское взаимодействие, используя API взаимодействия. Как тоько пользователь обратил внимание на оповещение он может либо его отклонить, либо использовать его элементы взаимодействия.</p>
+	<ul>
+		<li>
+			<h6>Событие <span class="dark-blue" >notificationclose</span></h6>
+			<p>Если пользователь отбрасывает оповещение через прямое воздействие на оповещение (к примеру, жестом смахивания оповещение в сторону в Андройде), то возникает это событие внутри сервисного рабочего.</p>
+			<pwa-attention [context]="{backgroundColor : '#e6ecff', color : '#35739a'}">
+				<span style="font-weight: 400">Внимание :</span>
+				<span class="blue">Если пользователь отклоняет все оповещения, тогда, для экономии ресурсов, это событие в сервисном рабочем не происходит совсем.</span>
+			</pwa-attention>
+			<p>Это событие очень важно, потому, что оно говорит о том, как пользователь взаимодействует с оповещением. Можно, к примеру, логировать данное действие в базу данных, или его можно использовать для синхронизации базы данных и избегать повторного оповещения пользователя по ненужной, отвергнутой теме. Ниже, пример обработки этого события в сервисном рабочем:</p>
+			<pwa-example-code [context]="{header : 'Обработка события notificationclose', ext : 'serviceWorker.js'}">
+			<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'notificationclose'</span><span class="dark-blue" >, function(</span><span class="dark-red" >e</span><span class="dark-blue" >) &#123;
+				var notification = </span><span class="dark-red" >e.</span><span class="dark-blue" >notification;
+				var primaryKey = notification.data.primaryKey;
+				console.log(</span><span class="green" >'Оповещение закрыто: ' </span><span class="dark-blue" >+ primaryKey);
+			&#125;);  </span>
+			</pwa-example-code>
+			<p>Из объекта события можно получить доступ к объекту <span class="dark-blue">notification</span> через одноименное свойство. Из него получаем доступ к объекту данных <span class="dark-blue">data</span> каждого оповещения через однойменное свойство для принятия решения о дальнейшей обработке. В примере выше, просто выводиться значение свойства <span class="dark-blue">primaryKey</span> в консоль. </p>
+		</li>
+		<li>
+			<h6>Событие <span class="dark-blue">notificationclick</span></h6>
+			<p>Наибоее важной обработкой, является обработка эмитирования этого события, когда пользователь нажимает на оповещение, возникающее вунутри сервисного рабочего. Пример кода обработки этого события ниже:</p>
+			<pwa-example-code [context]="{header : 'Обработка события notificationclick', ext : 'serviceWorker.js'}">
+			<span class="purple">self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'notificationclick'</span><span class="dark-blue" >, function(</span><span class="dark-red" >e</span><span class="dark-blue" >) &#123;
+				var notification = </span><span class="dark-red" >e</span><span class="dark-blue" >.notification;
+				var primaryKey = notification.data.primaryKey;
+				var action = </span><span class="dark-red" >e.</span><span class="dark-blue" >action;
+			
+				if (action === </span><span class="green" >'close'</span><span class="dark-blue" >) &#123;
+					notification.close();
+				&#125;else &#123;</span>
+					<span class="purple" >clients.</span><span class="dark-blue" >openWindow(</span><span class="green" >'http://www.example.com'</span><span class="dark-blue" >);
+					notification.close();
+				&#125;
+			&#125;); </span>
+			</pwa-example-code>
+			<p>Чтобы определить, какую кнопку нажал пользователь при взаимодействие с оповещением, необходимо обратиться к свойству <span class="dark-blue">action</span> объекта события, идентифицируя типы взаимодействия в условных операторах. Это наиболее практичная обработка, поскольку не все платформы поддерживают кнопки взаимодействия, и не каждая платформа отображает все типы взаимодействия. Анализ только двух типов взаимодействия (action, explore) работает везде. Когда пользователь нажимает на оповещение, он ожидает, что его направят туда, где можно получить больше информации о теме оповещения. Можно открыть новое окно, вызвав метод <span class="dark-blue">clients.openWindow()</span> в обработчике события, передав в аргумент адрес нужного ресурса. </p>
+		</li>
+	</ul>
+	<h4 id="futureDesign" pwa-query-selector>Проектирование с расчетом на будущее.</h4>
+	<p><a target="_blank" href="https://notifications.spec.whatwg.org/">Спецификация</a> постоянно развивается и производители браузеров постоянно добавляют новые функции, увеличивая возможности <span class="dark-blue">Notification API</span>, поэтому нужно заметить, что:</p>
+	<ul>
+		<li>Не все браузеры реализуют одинаковый уровень этого интерфейса.</li>
+		<li>Операционные системы устройств могут не поддерживать одинаковые функции интерфейса.</li>
+	</ul>
+	<p>Поэтому, проектирование сайтов и приложений в части уведомлений должно осуществляться с учетом этих обстоятельств, функциональность уведомлений должна хорошо работать на любом устройстве и браузере. Для этого можно предпринять несколько шагов, описанных ниже.</p>
+	<h5 id="supportCheck" pwa-query-selector>Проверка поддержки.</h5>
+	<p>Web еще не находиться в той точке, где можно строить приложения, зависящие от веб уведомлений, без оглядки на поддержку функциональности. Поэтому, начинать работу скрипта реализации уведомлений необходимо с проверки поддержки его функциональности. </p>
+	<pwa-example-code [context]="{header : 'Проверка функциональности', ext : 'main.js'}">
+	<span class="dark-blue" >if (</span><span class="green" >'Notification'</span> <span class="dark-blue" >in window && </span> <span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker) &#123;</span>
+		<span class="grey">// Отобразить пользовательский интерфейс уведомлений</span>
+	<span class="dark-blue" >&#125;else &#123;
+		alert(</span><span class="green" >'Браузер на поддерживает уведомлений!'</span><span class="dark-blue" >);
+		&#125;</span>
+	</pwa-example-code>
+	<p>Если браузер не поддерживает уведомления, то либо просто предупреждаем об этом пользователя, как в примере, либо интегрируем сервисы, использующие SMS или Email провайдеры для предоставления своевремменных оповещений пользователя.</p>
+	<h5 id="permissionCheck" pwa-query-selector>Проверка разрешения.</h5>
+	<p>Всегда проверяем разрешение пользователя на подключение API уведомлений.</p>
+	<pwa-example-code [context]="{header : 'Проверка разрешения', ext : 'main.js'}">
+	<span class="dark-blue" >if (</span><span class="purple" >Notification.</span><span class="dark-blue" >permission === </span><span class="green" >"granted"</span><span class="dark-blue" >) &#123;</span>
+		<span class="grey">/* Разрешение получено, включаем интерфейс уведомлений */</span>
+	<span class="dark-blue" >&#125; else if (</span><span class="purple" >Notification.</span><span class="dark-blue" >permission === </span><span class="green" >"blocked"</span><span class="dark-blue" >) &#123;</span>
+		<span class="grey">/* Пользователь явно запретил выдавать уведомления (нажал кнопку запрета), не надо повторно ему навязывать подписку*/</span>
+	<span class="dark-blue" >&#125; else &#123;</span>
+		<span class="grey">/* Пользователь явно не отказывал в подписке (просто закрыл уведомление), поэтому у него можно запросить разрешение еще раз */ </span>
+	<span class="dark-blue"	>&#125;</span>
+	</pwa-example-code>
+	<h5 id="crossBrowser" pwa-query-selector>Межбраузеные различия.</h5>
+	<p>Кнопки взаимодействия  уведомлений и отображаемые иконки отличаються между платформами, к примеру, некоторые операционные системы отображают ограниченное количество элементов действий, другие могут не отображать их вовсе. Можно проверить максимальное количество кнопок взаимодействия, которые могут быть отображены в свойстве <span class="dark-blue">Notification.maxActions</span>. Хорошей практикой является предположить, что система не может поддерживать никакие элементы действия, кроме событий нажатия на уведомление. Это означает, что обработчик должен проектировать уведомление под обработку только действий по умолчанию, а затем наслаивать настройку уведомлений для каждого действия. Считайте, что свойства кроме <span class="dark-blue">title</span> и <span class="dark-blue">body</span>, являються необязательными и отданы на усмотрение браузера и операционной системы. К примеру, не используйте кликабельность изображений в уведомлениях. Если изображение используется в качестве отображения контекстной информации (к примеру, фото собеседника), нужно позаботиться об отображении информации о нем в заголовке (title) или теле (body) уведомления, так, что бы пользователь мог определить выжность уведомления, в случае, если изображение не загрузиться или не будет видимым.<br></p> <p>Надписи кнопок должны быть понятными и краткими, но кнопки действия могут иметь иконки, хотя не каждая операционная система может их отобразить. Так же не полагайтесь на вибрацию для надежного привлечения внимания пользователя, некоторые операционные системы не могут запустить вибрацию, если на устройстве полностью отключен звук.
+	</p>
+	<h4 id="pushApi" pwa-query-selector>Push API(Итерфейс запуска уведомлений).</h4>
+<p>Мы знаем как создать уведомление и отобразить его пользователю из веб страницы и это работает, когда страница приложения открыта. Но, что если нужно запустить уведомление, когда страница закрыта и как тогда создать уведомление и привлечь к нему внимание пользователя? Нативные приложения имеют возможность применения такой функциональности, используя технологию <span class="dark-blue">Push Notification</span> (входящие уведомления). Она позволяет разработчику привлечь внимание пользователя выдачей своевременных уведомлений, настраивание содержимого которого происходит снаружи контекста веб страницы, даже когда приложение или браузер закрыты. Первоначально сконцентрируемся на аспектах клиентской части, реализуемые через <span class="dark-blue">Push API</span>, не касаясь серверной часть, предоставляя её разработчикам серверов. </p>
+	<h5 id="howPush" pwa-query-selector>Принцип работы Push API.</h5>
+	<p>Каждый браузер управляет входящими уведомлениями через собственную систему - сервис уведомлений (push service). Этот сервис огранизован производителями браузеров и разработчик не может оказать на него влияние. Когда пользователь, на клиенте, выдает разрешение на использование входящего уведомления для определенного приложения, разработчик в коде реализует подписку приложения на получение уведомлений от этого сервиса уведомлений и делает запрос на этот сервер. В результате выполнения кода возвращается специальный объект подписки, который содержит URL точки локации (место назначения) сервиса уведомлений, которая различается в различных браузерах и открытый ключ. Этот объект, при успешной подписки, передается на сервер приложения (сайта) и сохраняется в базе данных приложения, однозначно идентифицируя этот объект и пользователя приложения. При отправке сообщения, сервер приложения направляет запрос на точку локации, шифруя сообщение открытым ключем. Сервис уведомлений получает это сообщение, идентифицирует пользователя, и переправляет это сообщение нужному клиенту. Типичный объект подписки выглядит примерно так:</p>
+	<pwa-example-code [context]="{header : 'Объект подписки', ext : '.json'}">
+	<span class="dark-blue" >&#123;</span><span class="green" >"endpoint"</span> <span class="dark-blue" >:</span> <span class="green" >"https://fcm.googleapis.com/fcm/send/dpH5lCsTSSM:APA91bHqjZxM0VImWWqDRN7U0a3AycjUf4O-byuxb_wJsKRaKvV_iKw56s16ekq6FUqoCF7k2nICUpd8fHPxVTgqLunFeVeB9lLCQZyohyAztTH8ZQL9WCxKpA6dvTG_TUIhQUFq_n"</span><span class="dark-blue" >,</span>
+	<span class="green" >"keys" </span><span class="dark-blue" >: &#123;</span>
+		<span class="green" >"p256dh"</span> <span class="dark-blue" >:</span> <span class="green" >"BLQELIDm-6b9Bl07YrEuXJ4BL_YBVQ0dvt9NQGGJxIQidJWHPNa9YrouvcQ9d7_MqzvGS9Alz60SZNCG3qfpk="</span><span class="dark-blue" >,</span>
+		<span class="green" >"auth"</span> <span class="dark-blue" >:</span> <span class="green" >"4vQK-SvRAN5eo-8ASlrwA=="</span>
+		<span class="dark-blue" >&#125;
+	&#125;</span>
+	</pwa-example-code>
+	<p>URL точки локации содержит в себе уникальный идентификатор, с помощью которого сервис уведомлений определяет уникальность пользователя. Этот идентификатор используется для маршрутизации сообщения на устройство пользователя, и при обработке в браузере идентифицирует сервисного рабочего, обрабатывающего этот тип сообщения. Это идентификатор не прозрачный, т.е. разработчик не может определить персональные данные пользователя, и он не постоянный, поэтому по нему нельзя точно отследить пользователя.<br>
+	Поскольку, входящее уведомление является спаренным с сервисныс рабочим, приложение должно работать по безопасному протоколу <span class="dark-blue">HTTPS</span>. Это гарантирует, что каналы связи между сервисом уведомлений и пользователем, сервером приложения и пользователем являются безопасными. Однако, <span class="dark-blue">HTTPS</span> не гарантирует безопасность самого сервиса уведомлений и разработчик, при отправки сообщения с сервера приложения, должен быть уверен, что его сообщение не будет подделано или прочитано третьей стороной. Поэтому, оно должно быть закодировано средствами кодирования сообщений на стороне сервера приложения. </p>
+	<div class="pushSteps">
+		<p>Ниже, представлены последовательные шаги процесса отправки, получения и отображения входящих уведомлений:</p>
+		<ol>Сторона клиента:
+			<li>Подписка на сервис уведомлений, получение объекта подписки.</li>
+			<li>Отправка объекта подписки на сервер приложения.</li>
+		</ol>
+		<ol>На сервере приложения:
+			<li>Создание данных для отправки пользователю приложения.</li>
+			<li>Шифрование этих данных открытым пользовательским ключем.</li>
+			<li>Отправка зашифрованных данных на сервис уведомлений по адресу точки локализации.</li>
+		</ol>
+		<p>В сервисе уведомлений сообщение маршрутизируется, используя тот же адрес локализации, на устройство пользователя. Войдя в устройство пробуждается браузер, который активирует нужного сервисного рабочего, вызывая в нем событие <span class="dark-blue">push</span>. Работа сервисного рабочего : </p>
+		<ol>
+			<li>Получение данных сообщения в событии <span class="dark-blue">push</span>. </li>
+			<li>Выполнение рабочей логики в этом событии.</li>
+			<li>Отображение уведомление пользователю.</li>
+		</ol>
+	</div>
+	<p>Ниже, рассмотрим эти технологические части более подробно.</p>
+	<h5 id="subscribingPush" pwa-query-selector>Подписка на получение уведомлений.</h5>
+	<p>Для того, что бы запустить процесс получения уведомлений, первоначально необходимо подписаться на сервис их получения, результатом чего возвращается объект подписки - основная точка процесса отпрвки уведомлений. Он имеет информацию о используемом сервисе и об адресе получателя в контексте этого сервиса, а так же подробности о клиенте - получателе сообщения и содержит открытый ключ, использующийся для кодирования данных на стороне сервера приложения. Задача разработчика состоит в том, что бы безопасно передать этот объект подписки на сервер приложения и сохранить до нужного момента, к примеру, в базе данных. Но в этом примере просто выведем данные в консоль. Для начала регистрируем сервисного рабочего и при удачной регистрации проверим, имеется ли у пользователя подписка на получения сообщений с текущего домена</p>
+	<pwa-example-code [context]="{header : 'Регистрация сервисного рабочего и проверка подписки', ext : 'main.js'}">
+	<span class="dark-blue" >if (</span><span class="green" >'serviceWorker'</span> <span class="dark-blue" >in</span> <span class="purple" >navigator</span><span class="dark-blue" >) &#123;</span>
+		<span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.register(</span><span class="green" >'sw.js'</span><span class="dark-blue" >).then(function(</span><span class="dark-red" >reg</span><span class="dark-blue" >) &#123;
+			console.log(</span><span class="green" >'Сервисный рабочий зарегистрирован!'</span><span class="dark-red" >, reg</span><span class="dark-blue" >);</span>
+	
+			<span class="dark-red" >reg.</span><span class="dark-blue" >pushManager.getSubscription().then(function(</span><span class="dark-red" >sub</span><span class="dark-blue" >) &#123;
+				if (</span><span class="dark-red" >sub</span> <span class="dark-blue" >=== null) &#123;</span>
+					<span class="grey">//Обновить интерфейс, запросив разрешение на регистрацию </span>
+					<span class="dark-blue" >console.log(</span><span class="green" >'Пользователь не подписан на оповещения!'</span><span class="dark-blue" >);
+				&#125; else &#123; </span>
+					<span class="grey">//Подписка имеется, обновить базу новым объектом подписки </span>
+					<span class="dark-blue" >console.log(</span><span class="green" >'Объект подписки: '</span><span class="dark-red" >, sub</span><span class="dark-blue" >);
+				&#125;
+			&#125;);
+		&#125;).catch(function(</span><span class="dark-red" >err</span><span class="dark-blue" >) &#123;
+	console.log(</span><span class="green" >'Регистрация сервисного рабочего не удалась: '</span><span class="dark-red" >, err</span><span class="dark-blue" >);
+		&#125;);
+	&#125;</span>
+	</pwa-example-code>
+	<p>Эту проверку следует выполнять каждый раз, когда пользователь получает доступ к приложению, потому, что объект подписки может изменяться с течением времени. Разработчик должен быть уверен в синхронизации объекта подписки переданном от сервиса уведомлений с объектом хранящимся в базе данных приложения. Если объект подписки отсутствует, запращиваем разрешение пользователя через отображения ему интерфейса запроса. Предположим, пользователь дал согласие на получение уведомлений, дале необходимо подписаться на получение уведомлений с сервиса: </p>
+	<pwa-example-code [context]="{header : 'Оформление подписки на сервис уведомлений', ext : 'main.js'}">
+	<span class="dark-sky" >function</span> <span class="dark-blue" >subscribeUser() &#123;
+		if (</span><span class="green" >'serviceWorker'</span> <span class="dark-blue" >in</span> <span class="purple" >navigator</span><span class="dark-blue" >) &#123;</span>
+			<span class="purple" >navigator.</span><span class="dark-blue" >serviceWorker.ready.then(function(</span><span class="dark-red" >reg</span><span class="dark-blue" >) &#123;</span>
+	
+				<span class="dark-red" >reg.</span><span class="dark-blue" >pushManager.subscribe(&#123;</span>
+					<span class="brown" >userVisibleOnly : </span><span class="dark-blue" >true
+				&#125;).then(function(</span><span class="dark-red" >sub</span><span class="dark-blue" >) &#123;
+					console.log(</span><span class="green" >'URL точки локации: '</span><span class="dark-red" >, sub.</span><span class="dark-blue" >endpoint);
+				&#125;).catch(function(</span><span class="dark-red" >e</span><span class="dark-blue" >) &#123;
+					if (</span><span class="purple" >Notification.</span><span class="dark-blue" >permission === </span><span class="green" >'denied'</span><span class="dark-blue" >) &#123;
+						console.warn(</span><span class="green" >'Подписка на оповещение отклонена'</span><span class="dark-blue" >);
+					&#125; else &#123;
+						console.error(</span><span class="green" >'Невозможно подписаться на уведомления'</span><span class="dark-red" >, e</span><span class="dark-blue" >);
+					&#125;
+				&#125;);
+			&#125;)
+		&#125;
+	&#125;</span>
+	</pwa-example-code>
+	<p>Метод <span class="dark-blue">subscribeUser()</span> вызывается после согласия пользователя на получении уведомлений от приложения. В примере выше используется флаг <span class="dark-blue">userVisibleOnly</span> в методе подписки, определяющий, что входящее сообщение будет иметь оповещение, соответствующее пользователю. Если пользователь не выдает разрешение или возникает ошибка, промис будет отвергнут. Поэтом в код добавлен обработчик <span class="dark-blue">catch()</span>. </p>
+	<pwa-attention [context]="{bacgroundColor : '#e6ecff', color : '#35739a'}">
+		<span style="font-weight: 400">Внимание :</span>
+		<span class="blue">В текущей реализации Chrome, каждый раз, когда приходит сообщение и наш сайт или приложение не активны(закрыт или все фокуса), разработчик должен отобразить уведомление. Т.е. невозможно его отобразить не явно, без ведома пользователя. И если не отобразить уведомление, браузер автоматически создаст его, что бы дать знать пользователю об активности приложения в фоне. </span>
+	</pwa-attention>
+	<h5 id="handlingPush" pwa-query-selector>Обработка события <span class="dark-blue">push</span> сервисного рабочего.</h5>
+	<p>Сервисный рабочий получает входящее сообщение и создает из него уведомление. При получении входящего сообщения через операционную систему, в нем активируется событие <span class="dark-blue">push</span>, на которое разработчик предварительно подписывается, создавая обработчика этого события, получая в параметр объект события сообщения:</p>
+	<pwa-example-code [context]="{header : 'Обработка сообщения сервисным рабочим', ext : 'serviceworker.js'}">
+	<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'push'</span><span class="dark-blue" >, function(</span><span class="dark-red" >e</span><span class="dark-blue" >) &#123;
+		var options = &#123;</span>
+			<span class="grey">/* let d = e.data.json() */</span>
+			<span class="brown" >body : </span><span class="green" >'Это уведомление сформировано из события "push"!'</span><span class="grey" >, // d.body </span>
+			<span class="brown" >icon : </span><span class="green" >'images/example.png'</span><span class="brown" >,
+			vibrate : [</span><span class="dark-blue" >100, 50, 100</span><span class="brown" >],
+			data : &#123;
+				dateOfArrival : </span><span class="purple" >Date.</span><span class="dark-blue" >now(),</span>
+				<span class="brown" >primaryKey : </span><span class="green" >'2'</span>
+				<span class="dark-blue" >
+			&#125;,</span>
+			<span class="brown" >actions: [
+				&#123;
+					action : </span><span class="green" >'explore'</span><span class="brown" >,
+					title : </span><span class="green" >'Изучаем новый мир!'</span><span class="brown" >,
+					icon: </span><span class="green" >'images/checkmark.png'</span>
+				<span class="dark-blue" >&#125;,
+				&#123;</span>
+					<span class="brown" >action : </span><span class="green" >'close'</span><span class="brown" >,
+					title : </span><span class="green" >'Закрыть'</span><span class="brown" >,
+					icon : </span><span class="green" >'images/xmark.png'</span>
+				<span class="dark-blue" >&#125;,]
+		&#125;; </span>
+	<span class="dark-red" >e.</span><span class="dark-blue" >waitUntil(</span>
+		<span class="purple" >self.</span><span class="dark-blue" >registration.showNotification(</span><span class="green" >'Привет мир!'</span><span class="dark-blue" >, options)
+		);
+	&#125;); </span>
+	</pwa-example-code>
+	<p>В коде выше происходит получение сообщения в параметр функции, формирование тела уведомления, вызов метода отображения сообщения, завернутого в обертку-метод <span class="dark-blue">e.waitUntil()</span>, который продлевает время жизни события <span class="dark-blue">push</span> до разрешения промиса метода <span class="dark-blue">showNotification()</span>, гарантируя, что сервисный рабочий не отключиться до выполнения ассинхронной операции.</p>
+	<h5 id="webPushProtocol" pwa-query-selector>Протокол сетевых уведомлений (<a target="_blank" href="https://datatracker.ietf.org/doc/draft-thomson-webpush-protocol/">Web Push Protocol</a>)</h5>
+	<p>Это протокол является официальным стандартом отправки входящих сообщений, предназначенный для браузера. Он описывает структуру и последовательность создания сообщения, его кодировку, и отправку его к сервису сообщений. В качестве сервиса сообщений выступает абстракция, а конкретный сервис уведомлений зависит от используемого пользователемоперационной системы и браузера. Этот протокол сложен, но разработчику не нужно вникать во все подробности. Браузер автоматически заботиться о подробностях подписки пользователя к сервису уведомлений. Разработчик лишь должен принять подписной токен (идентификатор), выделить URL, и передать туда свое сообщение.</p>
+	<h5 id="sendingPush" pwa-query-selector>Отправка сообщений, используя сервис облачных сообщений Firebase (<a target="_blank" href="https://firebase.google.com/docs/cloud-messaging/">Firebase Cloud Messaging</a>)</h5>
+	<p>В настоящее время Chrome использует этот сервис для управлением уведомлениями. Для его использования нужно настроить проект на <a target="_blank" href="https://firebase.google.com/">Firebase</a>:</p>
+	<ol>
+		<li>В консоли Firebase выбрать <span class="dark-blue">Добавить проект</span>. </li>
+		<li>Ввести имя проекта и нажать <span class="dark-blue">Создать проект</span> </li>
+		<li>Войти в настройки проекта, нажав иконку шестеренки в левой колонке меню.   </li>
+		<li>Открыть закладку <span class="dark-blue">Cloud Messaging</span>, сохранить <span class="dark-blue">ключ сервера</span> и <span class="dark-blue">Идентификатор отправителя</span>. </li>
+	</ol>
+	<p>Для правильной маршрутизации сервиса уведомлений в браузере к нужному сервисному рабочему, необходимо знать идентификатор отправителя. Создать файл манифеста (manifest.json) в папке приложения и создать в нем json объект, свойству <span class="dark-blue">gcm_sender_id</span> которого присвоить числовое значение идентификатора отправителя из своего проекта, это обязательно для браузеров Chrome ниже 52 версии. Обновленная версия FCM использует предопределенный идентификатор отправителя (<a target="_blank" href="https://firebase.google.com/docs/cloud-messaging/js/client?authuser=0#configure_the_browser_to_receive_messages">подробнее</a>) Что бы браузер знал, что приложение имеет манифест, в файле приложения <span class="dark-blue">index.html</span> создать ссылку на него <span class="purple" >&#60;link</span> <span class="dark-blue" >rel=</span><span class="green" >"manifest"</span> <span class="dark-blue" >href=</span><span class="green" >"manifest.json"</span><span class="purple">&#62;</span> , пример файла ниже: </p>
+	<pwa-example-code [context]="{header : 'Свойство файла манифеста', ext : 'manifest.json'}">
+	<span class="dark-blue" >&#123;</span>
+		<span class="green" >"name" : "Push Notifications app",
+		"gcm_sender_id": "370072803732" </span>
+	<span class="dark-blue" >&#125;</span>
+	</pwa-example-code>
+	<p>Чтобы клиент мог получать <span class="dark-blue">FCM</span> входящие уведомления без полезной нагрузки, запрос должени включать следующее: </p>
+	<ul>
+		<li>URL локации сервиса сообщений.</li>
+		<li>Открытый серверный ключ, полученный в консоли Firebase. FCM использует его для проверки у сервера разрешения на отправку сообщений пользователю.</li>
+	</ul>
+	<p>Сайт или приложение в производстве настраивает свой сервис для взаимодействия своего сервера и FCM.<br>
+	Можно протестировать механизм уведомлений своего приложения, используя <a target="_blank" href="https://curl.haxx.se/docs/manpage.html">cUrl</a> для формирования запроса к URL точки локации, отправив пустое сообщение на сервис уведомлений и проверить передачу этого сообщения в браузер клиента. Если уведомление отображается, тогда все сделано правильно и приложение готово получать уведомления с сервиса FCM. </p>
+	<h5 >Отправка сообщений используя <span class="dark-blue">cUrl</span>.</h5>
+	<p><span class="dark-blue">cUrl</span> - коммандный интерфейс формирования и отправки запросов. Ниже, представлен шаблон запроса, который может использоваться для запроса на FCM сервис для передачи сообщения: </p>
+	<pwa-example-code [context]="{header : 'Шаблон запроса', ext : 'cUrl'}">
+		<span class="dark-blue" >curl</span> <span class="green" >"URL_точки назначения"</span> <span class="dark-blue" >--request</span> <span class="dark-red" >POST</span> <span class="dark-blue" >--header</span> <span class="green" >"TTL : 60"</span> <span class="dark-blue" >--header </span><span class="green" >"Content-Length: 0"</span> <span class="dark-blue" >\
+		--header </span><span class="green" >"Authorization: key=Серверный_ключ" </span>
+	</pwa-example-code>
+	<p>К примеру, запрос на сервис FCM (для Chrome используется заголовок авторизации):</p>
+	<pwa-example-code [context]="{header : 'Запрос на сервис FCM', ext : 'cUrl'}">
+		<span class="dark-blue" >curl</span> <span class="green" >"https://android.googleapis.com/gcm/send/fYFVeJQJ2CY:APA91bGrFGRmy-sY6NaF8a...gls7HZcwJL4 \
+		LFxjg0y0-ksEhKjpeFC5P"</span> <span class="dark-blue" >--request</span> <span class="dark-red
+" >POST</span> <span class="dark-blue" >--header</span> <span class="green" >"TTL: 60"</span> <span class="dark-blue" >--header</span> <span class="green" >"Content-Length: 0"</span> <span class="dark-blue" >\
+		--header </span><span class="green" >"Authorization: key=AIzaSyD1JcZ8WM1vTtH6Y0tXq_Pnuw4jgj_92yg"</span>
+	</pwa-example-code>
+		<p>Отправить сообщение в FireFox, используя ту же команду, но без заголовка авторизации <span class="dark-blue">Authorization</span>. Пример ниже </p>
+	<pwa-example-code [context]="{header : 'Запрос на сервис FCM', ext : 'cUrl'}">
+		<span class="dark-blue" >curl</span> <span class="green" >"https://updates.push.services.mozilla.com/wpush/v1/gAAAAABYGml8oAFQC2a-HYb...7hKVui9zuT"</span> <span class="dark-blue" >\
+		--request</span> <span class="dark-red" >POST</span> <span class="dark-blue" >--header</span> <span class="green" >"TTL: 60" --header "Content-Length: 0"</span>
+	</pwa-example-code>
+	<h5 id="sendingData" pwa-query-selector>Передача данных в сообщение.</h5>
+	<p>Chrome и Firefox поддерживают возможность доставки сообщений, содержащих объекты данных, через сервисный рабочий. Когда прихожит входящее уведомление, объект данных передается в свойство параметра, объекту события (PushEvent) , может быть любого типа, а получить к нему доступ можно через свойство <span class="dark-blue">data</span>, объекта события (PushMessageData), используя один из его методов. Ниже, пример получения данных глобальным контекстом сервисного рабочего:</p>
+	<pwa-example-code [context]="{header : 'Получение данных сервисным рабочим', ext : 'serviceworker.js'}">
+	<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'push'</span><span class="dark-blue" >, function(</span><span class="dark-red" >e</span><span class="dark-blue" >) &#123;
+		var body;
+		if (</span><span class="dark-red" >e</span><span class="dark-blue" >.data) &#123;
+			body = </span><span class="dark-red" >e.</span><span class="dark-blue" >data.text();
+		&#125; else &#123;
+			body = </span><span class="green" >'Входящее сообщение не имеет данных'</span><span class="dark-blue" >;
+		&#125;
+		var options = &#123; </span>
+			<span class="brown" >body : </span><span class="dark-blue" >body,</span>
+			<span class="brown">icon : </span><span class="green" >'images/notification-flat.png'</span>,
+			<span class="brown" >vibrate : </span><span class="dark-blue" >[100, 50, 100],</span>
+			<span class="brown" >data : </span><span class="dark-blue" >&#123; </span>
+			<span class="brown" >dateOfArrival : </span><span class="purple" >Date.</span><span class="dark-blue" >now(),</span>
+			<span class="brown" >primaryKey : </span><span class="dark-blue" >1
+			&#125;,</span>
+			<span class="brown" >actions : </span><span class="dark-blue" >[
+				&#123;</span>
+					<span class="brown" >action : </span><span class="green" >'explore'</span><span class="dark-blue" >,
+					title : </span><span class="green" >'Изучайте мир'</span><span class="brown" >,
+					icon : </span><span class="green" >'images/checkmark.png'</span>
+				<span class="dark-blue" >&#125;,
+				&#123;</span>
+					<span class="brown" >action : </span><span class="green" >'close'</span><span class="brown" >,
+					title : </span><span class="green" >'Спасибо, не нужно'</span><span class="brown" >,
+					icon : </span><span class="green" >'images/xmark.png'</span>
+				<span class="dark-blue" >&#125;,
+			]
+		&#125;; </span>
+	<span class="dark-red" >e</span><span class="dark-blue" >.waitUntil( </span>
+		<span class="purple" >self.</span><span class="dark-blue" >registration.showNotification(</span><span class="green" >'Входящее оповещение'</span><span class="dark-blue" >, options)
+			);
+	&#125;);</span>
+	</pwa-example-code>
+	<h5>Отправка сообщения с сервера приложения.(Node.js)</h5>
+	<p>Для отправки данных сообщение сначала должно быть закодировано с использованием значения ключа из объекта подписки. Как и со всем, что касается кодирования информации, наибоее эффективный подход - использовать активно подерживаемые <a target="_blank" href="https://github.com/web-push-libs">библиотеки</a>. Неплохая библиотека <a target="_blank" href="https://www.npmjs.com/package/web-push">web-push</a> для Node.js, обрабатывает кодирование и Web-Push протокол, и с ней очень просто работать: </p>
+	<pwa-example-code [context]="{header : 'Отправка сообщения с сервера приложений', ext : 'index-node.js'}">
+		<span class="purple" >webpush.</span><span class="dark-blue" >sendNotification(pushSubscription, payload, options)</span>
+	</pwa-example-code>
+	<p>Первый аргумент - объект подписки, полученный и переданный на сервер клиентом. Второй - передаваемые данные. Третий - объект настроек конфигурируемого сообщения. Смотрим подробности <a target="_blank" href="https://github.com/web-push-libs/web-push/">документации</a><br>
+	Итак, когда все клиентские компоненты механизма уведомлений на своих местах, можно создать простой серверный Node.js скрипт, который импортирует серверную библиотеку работы с уведомлениями и использует объект  подписки, полученный от клиента.</p>
+	<pwa-example-code [context]="{header : 'Загрузка библиотеки web-push в проект', ext : 'cmd'}">
+		<span class="dark-red" >npm install web-push</span>
+	</pwa-example-code>
+	<p>Пример ниже, передает объект подписки, данные и серверный ключ в метод <span class="dark-blue">sendNotification()</span>, а так же передается время жизни (сохранения) сообщения в секундах в свойство TTL. </p>
+	<pwa-example-code [context]="{header : 'Отправка сообщения с сервера приложения', ext : 'index-node.js'}">
+	<span class="dark-blue" >var webPush = require(</span><span class="green" >'web-push'</span><span class="dark-blue" >),
+		pushSubscription = &#123;</span>
+			<span class="green" >"endpoint"</span><span class="dark-blue" >:</span> <span class="green" >"https://android.googleapis.com/gcm/send/f1LsxkKphfQ:APA91bFUx7ja4BK4JVrNgVjpg1cs9lGSGI6IMNL4mQ3Xe6mDGxvt_C_gItKYJI9CAx5i_Ss6cmDxdWZoLyhS2RJhkcv7LeE6hkiOsK6oBzbyifvKCdUYU7ADIRBiYNxIVpLIYeZ8kq_A"</span><span class="dark-blue" >,</span>
+			<span class="green" >"keys" </span><span class="dark-blue" >: &#123;</span>
+				<span class="green" >"p256dh"</span><span class="dark-blue" >:</span><span class="green" >"BLc4xRzKlKORKWlbdgFaBrrPK3ydWAHo4M0gs0i1oEKgPpWC5cW8OCzVrOQRv-1npXRWk8udnW3oYhIO4475rds="</span><span class="dark-blue" >,</span>
+				<span class="green" >"auth" </span><span class="dark-blue" >:</span> <span class="green" >"5I2Bu2oKdyy9CwL8QVF0NQ=="</span>
+			<span class="dark-blue" >&#125;
+		&#125;,
+		payload = </span><span class="green" >'Это данные!'</span><span class="dark-blue" >,
+		options = &#123;</span>
+			<span class="brown" >gcmAPIKey : </span><span class="green" >'AIzaSyD1JcZ8WM1vTtH6Y0tXq_Pnuw4jgj_92yg'</span><span class="brown" >,
+			TTL : </span><span class="dark-blue" >60
+		&#125;;
+	
+	webPush.sendNotification(pushSubscription, payload, options);</span>
+	</pwa-example-code>
+	<h5 id="identifyingVapid" pwa-query-selector>Идентификация сервиса через <span class="dark-blue">VAPID</span> </h5>
+	<P>Протокол <span class="dark-blue" >Web Push</span> был спроектирован с учетом сохранения конфеденциальности пользователя и не требует строгой аутентификации между приложением и сервисом уведомлений, что вызывает следующие проблемы:</P>
+	<ul>
+		<li>Не аутентифицированный сервис уведомлений подвергается большиму риску отказов в следствии сервисных атак. </li>
+		<li>Любой сервер, владеющий или прехвативший URL точки локации в состоянии направлять сообщение пользователям вашего приложения</li>
+		<li>Не существует способа, которым сервис уведомлений мог бы связаться с разработчиком приложения в случае возникновения проблем с передачей сообщений.</li>
+	</ul>
+	<p>Решение в том, что бы приложение могло самостоятельно идентифицироваться, использую <a target="_blank" href="https://tools.ietf.org/html/draft-ietf-webpush-vapid-01">VAPID protocol</a>. Как минимум, он предоставляет надежную идентификацию сервера приложения, хотя и содержит контактную информацию (к примеру, email). Ниже перечислены несколько преимуществ использования <span class="dark-blue">VAPID</span>: </p>
+	<ul>
+		<li>Последовательная идентификация может быть использована сервисом уведомлений для организации поведения сервера приложения. Значительные отклонения от поведенческих норм могут быть использованы для запуска обрабатывающих исключения процедур.</li>
+		<li>Добровольно предоставляемая контактная информация может быть использована для коммуникации администратора сервера приложения в исключительных случаях.</li>
+		<li>Даже в случае отсутствия контактной информации, серверу приложения, имеющему хорошую репутацию может быть предоставлено преимущество над не аутентифицированным сервером приложения в обстоятельствах принятия решения отказа в передачи сообщения.  </li>
+		<li>Использование <span class="dark-blue">VAPID</span> позволяет избежать специфичных для <span class="dark-blue">Firebase Cloud Messages (FCM)</span> шагов отправки входящих уведомлений. Нет необходимости создавать проект Firebase, устанавливать свойство манифеста <span class="dark-blue">gcm_sender_id</span> и заголовок <span class="dark-blue">Authorization</span> , полагаясь лишь на собственные ресурсы.</li>
+	</ul>
+	<h5 id="useVapid" pwa-query-selector>Использование <span class="dark-blue">VAPID</span>. </h5>
+	<ul>
+		Прцесс простой, подробно рассматривается ниже:
+		<li>Сервер приложения создает пару ключей : открытый и закрытый. Открытый ключ передается приложению при загрузки его пользователем.</li>
+		<li>Когда пользователь соглашается получать уведомления, открытый ключ передается в объект настройки при вызове метода <span class="dark-blue">subscribe()</span> </li>
+		<li>При отправке сервером приложения сообщения, в него включается JSON сетевой идентификатор (объект JSON) вместе со значением свойства открытого ключа.</li>
+	</ul>
+	<h5>Создание пары ключей открытого/закрытого (public/private).</h5>
+	<p>Серверу приложения следует сгенерировать и поддерживать пару ключей, алгоритмом сигнатуры элептических кривых (ECDSA) с реализацией криптографии элептических кривых  <a target="_blank" href="https://csrc.nist.gov/csrc/media/events/workshop-on-elliptic-curve-cryptography-standards/documents/papers/session6-adalier-mehmet.pdf">P-256</a><br>
+	Можно посмотреть, как это реализовано в библиотеке <a target="_blank" href="https://github.com/web-push-libs/web-push">wep-push node library</a></p>
+	<pwa-example-code [context]="{header : 'Генерация VAPID ключей', ext : 'index-node.js'}">
+	<span class="dark-sky" >function</span> <span class="dark-blue" >generateVAPIDKeys()&#123;
+		const vapidKeys = </span><span class="purple" >webpush.</span><span class="dark-blue" >generateVAPIDKeys();
+		return &#123;</span>
+			<span class="brown" >publicKey : </span><span class="dark-blue" >vapidKeys.publicKey,</span>
+			<span class="brown" >privateKey : </span><span class="dark-blue" >vapidKeys.privateKey,
+		&#125;;
+	&#125;</span>
+	</pwa-example-code>
+	<h5>Подписка на получение уведомления с открытым ключем.</h5>
+	<p>Что бы подписать пользователей Chrome на получение уведомлений с открытым <span class="dark-blue">VAPID</span> ключем, его преобразуем в тип <span class="dark-blue">Uint8Array</span> и передаем в свойство объекта настроек метода <span class="dark-blue">subscribe()</span>. Проверить то, сработает ли этот ключ в подписке, можно по объекту подписки, который возвращается этим методом : если свойство <span class="dark-blue">origin</span> содержит свойство <span class="dark-blue">fcm.googleapis.com</span>, то ключ сработает.</p>
+	<pwa-attention [context]="{ backgroundColor : '#e6ecff', color : '#35739a'}">
+		<span style="font-weight: 400">Внимание :</span>
+		<span class="blue">Для пользователей других браузеров библиотека <span class="dark-blue">web-push</span> будет использовать Web Push Protocol, поэтому код серверной стороны сработает для любого сервиса уведомлений.</span>
+	</pwa-attention>
+	<h5>Отправка уведомления.</h5>
+	<p>Чтобы отправить сообщение используя <span class="dark-blue">VAPID</span> создается обычный WEB PUSH PROTOCOL запрос с двумя дополнительными HTTP заголовками <span class="dark-blue">Authorization</span> и <span class="dark-blue">Crypto-Key</span>.</p>
+	<ul>
+		<li><span class="dark-blue">Authorization</span> -  знаковый идентификатор (<a target="_blank" href="https://jwt.io/">JWT</a>). Этот иденификатор позволяет закодировать JSON объект таким образом, что бы две обменивающиеся стороны были однозначно идентифицированны, где отправляющая сторона подписывает, а принимающая сторона проверяет подпись ожидаемого отправителя. Структура этого идентификатора состоит из трех областей данных: <span class="dark-blue">&#60;Заголовок (JWTHeader)&#62;.&#60;Данные (Payload)&#62;.&#60;Подпись (Signature)&#62;</span>, разделяемые символом точки, формирующих URL, закодированный в base64.
+		<p><span class="dark-blue">Заголовок (JWTHeader)</span> - область заголовка содержит значения: тип токена и имя алгоритма кодирования. Для <span class="dark-blue">VAPID</span> должно быть:</p>
+	<pwa-example-code [context]="{header : 'Заголовок JWT', ext : '.json'}">
+	<span class="green" >&#123;
+		"typ": "JWT",
+		"alg": "ES256"
+	&#123; </span>
+	</pwa-example-code>
+			<p><span class="dark-blue" >Данные (Payload)</span> - другой JSON объект, содержащий следующие свойства:</p>
+			<ul>
+				<li><span class="dark-blue" >aud</span> - адрес сервиса уведомлений (не сервер приложения). Для формирования значения можно использовать отрывок кода : <span class="dark-red">const audience = new URL(subscription.endpoint).origin</span> </li>
+				<li><span class="dark-blue">exp</span> - время истечения. Число в секундах, указывающее на временной диапазон актуальности запроса. Должно быть в 24 часовом формате по  UTS (Coordinated Universal Time). </li>
+				<li><span class="dark-blue">sub</span> - URL объекта или "mailto:" URL, содержит почтовый адрес для контакта в случае необходимости.</li>
+			</ul> <br>
+	<pwa-example-code [context]="{header : 'Область даты (Payload)', ext : '.json'}">
+	<span class="green" >&#123;
+		"aud": "http://push-service.example.com",
+		"exp": </span><span class="purple" >Math.</span><span class="dark-blue" >floor((</span><span class="purple" >Date</span><span class="dark-blue" >.now() / 1000) + (12 * 60 * 60)),</span>
+		<span class="green" >"sub": "mailto: my-email@some-url.com"
+	&#125;</span>
+	</pwa-example-code>
+			<p><span class="dark-blue" >Подпись (Signature)</span> - результат соединения кодированных заголовка и данных с точкой, кодированных с использованием <span class="dark-blue">VAPID</span> закрытого ключа, созданного ранее. Этот результат добавляется после точки в соединение заголовка и данных. Существуют несколько <a target="_blank" href="https://jwt.io/#libraries-io">библиотек</a>, принимающих область заголовка и JSON объект области данных, которые генерируют подпись. Подписанный идентификатор <span class="dark-blue">JWT</span> используется в качестве значения заголовка запроса <span class="dark-blue">Authorization</span> с добавленным перед ним словом <span class="dark-blue">WebPush</span> с пробелом, а так же точки-разделители, пример ниже: </p>
+	<pwa-example-code [context]="{header : 'Значение заголовка аутентификации ', ext : '.js'}">
+		<span class="purple" >WebPush</span> <span class="dark-red" >eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJhdWQiOiJodHRwczovL2ZjbS5nb29nbGVhcGlzLmNvbSIsImV4cCI6MTQ2NjY2ODU5NCwic3ViIjoibWFpbHRvOnNpbXBsZS1wdXNoLWRlbW9AZ2F1bnRmYWNlLmNvLnVrIn0.Ec0VR8dtf5qb8Fb5Wk91br-evfho9sZT6jBRuQwxVMFyK5S8bhOjk8kuxvilLqTBmDXJM5l3uVrVOQirSsjq0A </span>
+	</pwa-example-code>
+		</li>
+		<li><span class="dark-blue">Crypto-Key</span> - так же как и для заголовка авторизации, нужно добвати <span class="dark-blue">VAPID</span> ключ в этот заголокок, который должен быть строкой, кодированной в <span class="dark-blue">base64</span>, к которой добавлено слово <span class="dark-blue">p256ecdsa=</span> с пробелом после него. При отправке сообщения с кодированными данными, перед заголовком <span class="dark-blue">Crypto-Key</span> добавляется слово <span class="dark-blue">dh=</span>, после которого без пробела идет серверный ключ прилодения, затем запятая и пробел. Пример ниже.<br>
+	<pwa-example-code [context]="{header : 'Значение криптозаголовка', ext : '.js'}">
+	<span class="dark-blue" >dh=</span><span class="dark-red" >BGEw2wsHgLwzerjvnMTkbKrFRxdmwJ5S_k7zi7A1coR_sVjHmGrlvzYpAT1n4NPbioFlQkIrTNL8EH4V3ZZ4vJE</span><span class="dark-blue" >,
+	p256ecdsa=</span><span class="dark-red" >BDd3_hVL9fZi9Ybo2UUzA284WG5FZR30_95YeZJsiApwXKpNcF1rRPF3foIiBHXRdJI2Qhumhf6_LFTeZaN </span>
+	</pwa-example-code>
+		</li>
+	</ul>
+	<h5>Небольшой пример.</h5>
+	<p>Пример отправки сообщения через <span class="dark-blue">cUrl</span> используя <span class="dark-blue">VAPID</span> </p>
+	<pwa-example-code [context]="{header : 'Пример отправки через cUrl', ext : 'cUrl'}">
+		<span class="purple" >curl</span> <span class="green" >"https://updates.push.services.mozilla.com/wpush/v1/gAAAAABXmk....dyR"</span> <span class="dark-blue" >--request</span> <span class="dark-red" >POST</span> <span class="dark-blue" >--header</span> <span class="green" >"TTL: 60"</span> <span class="dark-blue" >--header</span> <span class="green" >"Content-Length: 0"</span> <span class="dark-blue" >--header</span> <span class="green" >"Authorization: WebPush eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJhdWQiOiJodHRwczovL2ZjbS5nb29nbGVhcGlzLmNvbSIsImV4cCI6MTQ2NjY2ODU5NCwic3ViIjoibWFpbHRvOnNpbXBsZS1wdXNoLWRlbW9AZ2F1bnRmYWNlLmNvLnVrIn0.Ec0VR8dtf5qb8Fb5Wk91br-evfho9sZT6jBRuQwxVMFyK5S8bhOjk8kuxvilLqTBmDXJM5l3uVrVOQirSsjq0A" --header "Crypto-Key: p256ecdsa=BDd3_hVL9fZi9Ybo2UUzA284WG5FZR30_95YeZJsiApwXKpNcF1rRPF3foIiBHXRdJI2Qhumhf6_LFTeZaNndIo"</span>
+	</pwa-example-code>
+	<p>В примере выше, добавили два заголовка: <span class="dark-blue">Authorization</span>, представляющий <span class="dark-blue">JWT</span> токен и <span class="dark-blue">Crypto-key</span>, содержащий открытый ключ, использующийся для проверки корректности токена. Ниже пример, отправки данных с сервера с использованием <span class="dark-blue">VAPID</span> и <span class="dark-blue">web-push</span> библиотеку. В нем добавляется <span class="dark-blue">VAPID</span> объект в необязательный параметр метода <span class="dark-blue">sendNotification()</span>. Он содержит свойство <span class="dark-blue">sub</span> в значении адреса почты, сгенерированные открытый и закрытый ключи. Библиотека берет на себя функцию кодирования сообщения, генерирования и подписи <span class="dark-blue">JWT</span>, добавляет заголовки авторизации и крипто-ключа. Подробнее, смотрите <a target="_blank" href="https://github.com/web-push-libs/web-push">документация библиотеки</a>. </p>
+	<pwa-example-code [context]="{header : 'Отправка данных через web-push на сервере', ext : 'app-node.js'}">
+	<span class="dark-blue" >var webPush = require(</span><span class="green" >'web-push'</span><span class="dark-blue" >),
+		pushSubscription = &#123;</span>
+			<span class="green" >"endpoint"</span> <span class="dark-blue" >:</span> <span class="green" >"https://fcm.googleapis.com/fcm/send/c0NI73v1E0Y:APA91bEN7z2weTCpJmcS-MFyfbgjtmlAWuV5YaaNw625_Rq2-f0ZrVLdRPXKGm7B3uwfygicoCeEoWQxCKIxlL3RWG2xkHs6C8-H_cxq-4Z-isAiZ3ixo84-2HeXB9eUvkfNO_t1jd5s",
+			"keys"</span><span class="dark-blue" >:&#123;</span>
+				<span class="green" >"p256dh"</span> <span class="dark-blue" >:</span> <span class="green">"BHxSHtYS0q3i0Tb3Ni6chC132ZDPd5uI4r-exy1KsevRqHJvOM5hNX-M83zgYjp-1kdirHv0Elhjw6Hivw1Be5M=",
+				"auth" </span><span class="dark-blue" >:</span> <span class="green" >"4a3vf9MjR9CtPSHLHcsLzQ=="</span>
+			<span class="dark-blue" >&#125;
+	&#125;;
+		vapidPublicKey = </span><span class="green" >'BAdXhdGDgXJeJadxabiFhmlTyF17HrCsfyIj3XEhg1j-RmT2wXU3lHiBqPSKSotvtfejZlAaPywJ9E-7AxXQBj4'</span><span class="dark-blue" >,
+		vapidPrivateKey = </span><span class="green" >'VCgMIYe2BnuNA4iCfR94hA6pLPT3u3ES1n1xOTrmyLw'</span><span class="dark-blue" >,
+		payload = </span><span class="green" >'Это - данные в сообщении!'</span><span class="dark-blue" >,
+		options = &#123;</span>
+			<span class="dark-red" >vapidDetails : </span><span class="dark-blue" >&#123;</span>
+				<span class="dark-red" >subject : </span><span class="green" >'mailto:example_email@example.com'</span><span class="dark-blue">,</span>
+				<span class="dark-red" >publicKey : </span><span class="dark-blue" >vapidPublicKey,</span>
+				<span class="dark-red" >privateKey : </span><span class="dark-blue" >vapidPrivateKey
+		&#125;,</span>
+			<span class="dark-red" >TTL : </span><span class="dark-blue" >60
+	&#125;;
+	
+	webPush.sendNotification(pushSubscription, payload, options);</span>
+	</pwa-example-code>
+	<h4 id="beastPractices" pwa-query-selector>Применяемые техники</h4>
+	<h5 id="useWisely" pwa-query-selector>Применяйте уведомления разумно</h5>
+	<p>Уведомления должны быть своевременные, точные и важными. Есть несколько правил, следования которым может повлиять на увеличение посещаемости сайта.</p>
+	<ul>
+		<li><span class="dark-blue">Своевременность</span> - уведомления должны быть отображены в нужное время. Используйте уведомления для событий, для которых значимо временя свершения, синхронность привлечения внимания людей. К примеру, подходит время начала чата, трансляции или стрима социальной сети. Какое-либо важное календарное событие, собирающее вместе людей, и к которому нужно привлечь внимание пользователя в качестве напоминания о нем. </li>
+		<li>
+			<span class="dark-blue">Точность</span> - предложение полноты информации, необходимой пользователю для принятия решения без посещения страницы приложения (сайта), и по мере возможности должно быть:
+			<ul>
+				<li>Кратким.</li>
+				<li>Иметь конкретные заголовок и содержание.</li>
+				<li>Группировать важную информацию слева вверху уведомления.</li>
+				<li>Содержать желаемый выраженный элемент действия.</li>
+			</ul>
+			<p>Поскольку пользователи, в основном, на уведомления обращают минимум внимания, заголовок, описание и иконка уведомления должны быть красноречивыми, хорошо продуманными. Иконка должна соответствовать контексту уведомления, что бы пользователь мог получить общее представление об уведомлении без чтения содержания.</p>
+		</li>
+		<li><span class="dark-blue">Важность</span> - уведомление должно быть важным для пользователя. Если он получает слишком много не важных уведомлений, он может отключить их совсем, поэтому они должны персонифицированы (к примеру, если это уведомление к чату, хорошо бы отметить, от кого именно оно исходит).
+			<p>Избегайте уведомлений, которые не направлены конкретно на пользователя, или информация в уведомлении устарела. Не создавайте уведомления, если информация, в настоящее время, уже находится на экране пользователя. Вместо этого используйте пользовательский интерфейс самого приложения, что бы оповестить пользователя о том, что  новая информация уже находиться в контексте приложения. К примеру, приложение чата не должно создавать уведомление через операционную систему во время разговора пользователя с собеседником в чате.<br>
+			Не используйте уведомления в качестве рекламы любого рода.</p>
+			</li>
+	</ul>
+	<h5 id="manageMany" pwa-query-selector>Управление несколькими уведомлениями.</h5>
+	<p>Не разумно направлять пользователю множество, пусть даже важных, но связанных уведомлений. Однако, если не построить их правильно, пользователю будет трудно в них разобраться. В таком случае стоит применить группировку сообщений со сходным контекстом в одно уведомление. К примеру, при построении социального приложения, группировка уведомлений по общему признаку или теме хорошо подойдет.<br>
+	Объект уведомления имее свойство <span class="dark-blue">tag</span>, которое является группировочным ключем. При создании уведомления с установленным значением этого свойства и при условии, что пользователю уже отображается уведомление с тем же значением свойства, система автоматически заменит содержимое отображаемого уведомления, без создания нового. Для того, что бы избежать вызова повторного звукового сигнала или вибрации, необходимо установить свойство <span class="dark-blue">renotify</span> в истину. Пример ниже: </p>
+	<pwa-example-code [context]="{header : 'Управление несколькими сообщениями', ext : 'serviceworker.js'}">
+	<span class="grey">//Первое сообщение</span>
+	<span class="purple" >registration.</span><span class="dark-blue" >showNotification(</span><span class="green" >'Первое сообщение!'</span><span class="dark-blue" >, &#123; body: </span><span class="green" >'Первое сообщение'</span><span class="dark-blue" >, tag : </span><span class="green" >'id1'</span><span class="dark-blue" >&#125;);</span>
+	<span class="grey">//Второе сообщение, у которого значение атрибута "tag" совпадает с первым</span>
+	<span class="purple" >registration.</span><span class="dark-blue" >showNotification(</span><span class="green" >'Второе сообщение'</span><span class="dark-blue" >, &#123; body : </span><span class="green" >'Второе сообщение!'</span><span class="dark-blue" >, tag : </span> <span class="green" >'id1'</span><span class="dark-blue" >, renotify: true &#125;); </span>
+	</pwa-example-code>
+	<h5 id="whenShow" pwa-query-selector>Когда отображать уведомление.</h5>
+	<p>Если пользователь уже использует приложение, то нет необходимости отображать уведомление. Этой логикой можно управлять на сервере, но проще, отображение уведомления возложить на сервисного рабочего, в обработчике события <span class="dark-blue">push()</span>. Глобальая переменная <span class="dark-blue">clients</span> -  коллекция, доступна для глобального контекста сервисного рабочего и сожержит все активные (запущенные) приложения на данном устройстве (системе). Если активных приложений нет (т.е. приложения закрыты), то следует показать входящее уведомление. Количество открытых приложений говорит о том, что пользователь открыл приложение или сайт на нескольких закладках, в этом случае лучше предусмотреть выдачу сообщения средствами приложения и показать его на каждой открытой странице(закладке). Пример ниже </p>
+	<pwa-example-code [context]="{header : 'Отображение уведомления или сообщения через UI', ext : 'serviceworker.js'}">
+	<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'push'</span><span class="dark-blue" >, function(</span><span class="dark-red" >e</span><span class="dark-blue" >) &#123; </span>
+		<span class="purple" >clients.</span><span class="dark-blue" >matchAll().then(function(</span><span class="dark-red" >c</span><span class="dark-blue" >) &#123;
+			if (</span><span class="dark-red" >c</span><span class="dark-blue" >.length === 0) &#123; </span>
+				<span class="grey">// Показать входящее уведомление (приложение закрыто)</span>
+				<span class="dark-red" >e</span><span class="dark-blue" >.waitUntil(</span>
+					<span class="purple" >self.</span><span class="dark-blue" >registration.showNotification(</span><span class="green" >'Push notification'</span><span class="dark-blue" >)
+				);
+			&#125; else &#123;</span>
+			<span class="grey">// Отправить сообщение странице для обновления интерфейса UI </span>
+				<span class="dark-blue" >console.log(</span><span class="green" >'Приложение уже открыто!'</span><span class="dark-blue" >);
+			&#125;
+		&#125;);
+	&#125;); </span>
+	</pwa-example-code>
+	<h5 id="hideShow" pwa-query-selector>Скрытие уведомление при получении фокуса страницей с открытым приложением.</h5>
+	<p>Когда пользователь нажимает на уведомление, можно закрыть все уведомления, которые были вызваны для конкретного приложения.Отчистка всех уведомлений происходит путем итерирования коллекции, возвращаемой методом <span class="dark-blue">getNotifications()</span> на объекте регистрации сервисного рабочего и закрытия отдельного элемента коллекции. Фильтрация элементов коллекции может осуществляться внутри промиса, возвращаемого методом <span class="dark-blue">getNotifications(), к примеру, по некоторым произвольным данным, назначенными к элементу коллекции.</span> </p>
+	<pwa-example-code [context]="{header : 'Закрытие уведомлений', ext : 'serviceworker.js'}">
+	<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'notificationclick'</span><span class="dark-blue" >, function(</span><span class="dark-red" >e</span><span class="dark-blue" >) &#123; </span>
+		<span class="grey">//Выполнение функциональности при нажатии на уведомление
+			// Закрытие всех уведомлений</span>
+		<span class="purple" >self.</span><span class="dark-blue" >registration.getNotifications().then(function(</span><span class="dark-red" >notifications</span><span class="dark-blue" >) &#123;</span>
+			<span class="dark-red" >notifications.</span><span class="dark-blue" >forEach(function(</span><span class="dark-red" >notification</span><span class="dark-blue" >) &#123;</span>
+				<span class="dark-red" >notification.</span><span class="dark-blue" >close();
+			&#125;);
+		&#125;);</span>
+		
+		<span class="grey">//Закрытие уведомлений со значением свойства "tag" в "id1"</span>
+		<span class="dark-blue" >var options = &#123;tag : </span><span class="green" >'id1'</span><span class="dark-blue" >&#125;;</span>
+		<span class="purple" >self.</span><span class="dark-blue" >registration.getNotifications(options).then(function(</span><span class="dark-red" >notifications</span><span class="dark-blue" >) &#123; </span>
+			<span class="dark-red" >notifications.</span><span class="dark-blue" >forEach(function(</span><span class="dark-red" >notification</span><span class="dark-blue" >) &#123;</span>
+				<span class="dark-red" >notification.</span><span class="dark-blue" >close();
+			&#125;);
+		&#125;);</span>
+	<span class="dark-blue" >&#125;);</span>
+	</pwa-example-code>
+	<h5 id="notificationsTabs" pwa-query-selector>Уведомления и закладки.</h5>
+	<p>Управление окнами браузера может быть довольно не простым делом. Когда пользователь нажимает на уведомление, можно получить список всех открытых окон с приложением, и потом решить, какое использовать. Код ниже ищет первое окно со статусом видимости в значении <span class="dark-blue">visible</span>, и если оно найдено, прейти в эту закладку и установить ей фокус. Если такое окно не найдено, открыть новое. </p>
+	<pwa-example-code [context]="{header : 'Переход и получение фокуса окном приложения', ext : 'serviceworker.js'}">
+	<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'notificationclick'</span><span class="dark-blue" >, function(</span><span class="dark-red" >e</span><span class="dark-blue" >) &#123;</span>
+		<span class="purple" >clients.</span><span class="dark-blue" >matchAll().then(function(</span><span class="dark-red" >clis</span><span class="dark-blue" >) &#123;
+			var client = </span><span class="dark-red" >clis</span><span class="dark-blue" >.find(function(</span><span class="dark-red" >c</span><span class="dark-blue" >) &#123;</span>
+				<span class="dark-red" >c.</span><span class="dark-blue" >visibilityState === </span><span class="green" >'visible'</span><span class="dark-blue" >;
+			&#125;);
+			if (client !== </span><span class="dark-sky" >undefined</span><span class="dark-blue" >) &#123;
+				client.navigate(</span><span class="green" >'какой_то_url'</span><span class="dark-blue" >);
+				client.focus();
+			&#125; else &#123;</span>
+				<span class="grey">// Нет видимого окна, открыть новое.</span>
+				<span class="dark-red" >clients.</span><span class="dark-blue" >openWindow(</span><span class="green" >'какой_то_url'</span><span class="dark-blue" >); </span>
+				<span class="purple" >notification</span><span class="dark-blue" >.close();
+			&#125;
+		&#125;);
+	&#125;); </span>
+	</pwa-example-code>
+	<h5 id="manageServer" pwa-query-selector>Управление уведомлениями на сервере.</h5>
+	<p>Пока, мы предпологали, что пользователь видит возникающие уведомления, но, что если устройство пользователя находится вне сети и сервер приложения направляет сообщение этому пользователю, актуальность которого имеет временную зависимость, а пользователь получает доступ к сети на день позже предполагаемого отображения этого уведомления. В этом случае уведомление не является ни своевременным, ни актуальным, поэтому оно не должно быть отображено пользователю.<br>Для определения временного диапазона актуальности уведомления используется свойство <span class="dark-blue">time_to_live</span> (TTL), значение которого должно быть в диапазоне числовых значений от <span class="dark-blue">0</span> до <span class="dark-blue">2,419,200</span> секунд, что соответствует максимальному периоду времени в течении которого FCM хранит и пытается преедать сообщение. Запрос, не содержащий данного значения имеет значение по умолчанию, равное четырем неделям, и если сообщение не сможет быть отправлено в этот период, оно удаляется.<br> Другое преимущество определение данного свойства - FCM никогда не задержит сообщение, у которого значение этого свойства установлено в <span class="dark-blue">0</span> , и предпримет мгновенную попытку его достваки по принципу "сейчас или никогда". При неудачной попытки доставки таких мгновенных сообщений они отбрасываются, и не храняться в системе доставки, поэтому для каждого сообщения нужно продумать подходящую задержку в отправке. Ниже пример, включающий установку свойства TTL:   </p>
+	<pwa-example-code [context]="{header : 'Установка свойства TTL', ext : 'serviceworker.js'}">
+	<span class="dark-blue" >&#123;</span>
+		<span class="green" >"collapse_key" : "demo",
+		"delay_while_idle" : </span><span class="dark-blue" >true,</span>
+		<span class="green" >"to" : "xyz",
+		"data" : &#123;
+			"key1" : "value1",
+			"key2" : "value2",
+		&#125;,
+		"time_to_live" : </span><span class="dark-blue" >3
+	&#125;</span>
+	</pwa-example-code>
+	<h5 id="redundant" pwa-query-selector>Управление излишними уведомлениями.</h5>
+	<p>Что, если пользователь может получить одно и тоже уведомление в несколько открытых окон одного и того же приложения. Рассмотрим следующий случай:</p>
+	<ul>
+		<li>Мобильное устройство пользователя вне сети.</li>
+		<li>Сервер направляет сообщение в адрес пользователя, извещая о новом email. </li>
+		<li>Пользователь получает уведомление и  проверяет почту через настольный компьютер</li>
+		<li>Когда пользователь включает телефон, уведомление доставлено, отметки о полученных новых письмах не установлены, оповещение не появляется.</li>
+	</ul>
+	<p>Задача заключается в том, что бы не отображать излишние сообщения, которые были просмотрены в другом месте, но по логике должны быть отобжажены на текущем устройстве.<br>
+		Существуют несколько вариантов решить такую задачу: </p>
+	<ul>
+		<li>Отобразить уведомление в любом случае - выглядит как внезапный сбой синхронизации.</li>
+		<li>Скрыть входящее сообщение без запуска создания уведомления. Предусмотреть обработку подобных случаев без отображения уведомления.</li>
+		<li>Не принимать сообщение с сервера и замещать входящее уведомление предварительно предусмотренным откатом на стандартное уведомление. К примеру, вместо отображения информации о почте, которая уже просмотрена, отображать нейтральную надпись об обновлении почты.</li>
+	</ul>
+</mat-card>

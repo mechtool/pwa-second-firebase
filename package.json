@@ -5,8 +5,8 @@
     "ng": "ng",
     "serve": "ng serve --open --source-map",
     "build": "ng build --common-chunk --extract-licenses=false",
-    "bsw": "ng build --service-worker",
-    "bp": "ng build --prod",
+    "bsw": "ng build --service-worker --extract-licenses=false",
+    "bp": "ng build --prod --extract-licenses=false",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"

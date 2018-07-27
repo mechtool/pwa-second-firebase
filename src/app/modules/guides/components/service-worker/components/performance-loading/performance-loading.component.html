@@ -1,0 +1,75 @@
+<mat-card class="pwa-page" >
+	<h4 id="introduction" pwa-query-selector>Высокопроизводительная загрузка с сервисным рабочим.</h4>
+	<p>Добавление сервисного рабочего в приложение может предложить значительные преимущества в производительности, идущие за пределы возможного, даже перед приложением следующим всевозможным традиционным наилутшим практикам кэширования. Но имеются хорошие практики для целей оптимизации времени загрузки. Следующие советы способствуют получению максимльной производительности от реализации сервисного рабочего в приложении.  </p>
+	<h5 id="navigation-request" pwa-query-selector>Навигационные запросы.</h5>
+	<p>Навигационные запросы определены в спецификации <a target="_blank" href="https://fetch.spec.whatwg.org/#navigation-request">Fetch API</a> - это запросы, чьей целью является документ (<span class="dark-blue" >document</span>), но для технической точности нехватает небольшого ньюанса - влияние переходов на производительности приложения. Навигационный запрос происходит всякий раз, когда в строке браузера появляется корректный адрес (URL), взаимодействует с объектом <span class="dark-blue"> window.location</span> или при переходе по ссылке с одной странице на другую. Помещение элемента <span class="purple">iframe</span> на странице, также приводит к навигационному запросу для его атрибута <span class="dark-blue">src</span>. </p>
+	<pwa-attention [context]="{ background : '#e6ecff', color : '#03007B'}">
+		<span style="font-weight: 400">Внимание!</span> <span>Одностраничные веб приложения опираются на <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/History_API">History API</a> и <span class="dark-blue">DOM</span> манипуляции, реализуют внутреннюю навигацию без необходимости обращения к серверу при переключении между представлениями. Но первоначальный запрос в сессии браузера - всегда навигационный.</span>
+	</pwa-attention>
+	<p>Приложение может осуществить много ресурсных запросов (<a target="_blank" href="https://fetch.spec.whatwg.org/#subresource-request"></a>) для отображения всего своего контента - <span class="dark-blue">HTML</span> элементы в навигационных запросах, ответственные за активацию иных типов запросов. Любые задержки в ответах для первоначальных навигационных запросов будут болезненно очевидны для пользователя, поскольку они оставляют пустым стартовый экран приложения на неопределенное время.<br>
+		Традиционные <a target="_blank" href="https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/http-caching#invalidating_and_updating_cached_responses">техники кэшиирования</a> опираются на HTTP заголовки <span class="dark-blue">Cache-Control</span>, а не на сервисного рабочего, требуя навигационные запросы в сеть, тем самым гарантируя, что все ресурсные URL не являются устаревшими, поэтому точкой равновесия для наилутшей производительности является получение преимуществ от агрессивного кэширования ресурсов, без навигационных запросов, зависящих от пропускной способности сети. А это невозможно без четко настроенного сервисного рабочего, созданного специально под архитектуру приложения.</p>
+	<h4 id="best-performans" pwa-query-selector>Лутшая производительность - отказ от сетевых вызовов в пользу кэша при навигационных запросах.</h4>
+	<p>Больщой эффект от добавления сервисного рабочего в приложение происходит при навигационных запросах, без необхлдимости ожидания ответов из сети. Наилутшим сценарием соединения с сервером был бы показатель продолжительности серверного запроса и чтения локально кэшированных данных. В сценариях, где пропускная способность сети менее минимально допустимой (мобильные устройства, слабые сети), количество времени требуемой для получения первого байта данных из сети может легко перевесить продолжительность визуалиции целой страницы HTML. Выбор правильной реализации принципа кэширования сервисного рабочего во многом зависит от архитектуры сайта.</p>
+	<h5 id="streaming-responses" pwa-query-selector>Поточность сложных запросов.</h5>
+	<p>Если файл <span class="dark-blue">HTML</span> может быть разделен на несколько частей, со статическим заголовком и подвалом вместе со средней частью, содержимое которой зависит от  запроса, было бы идеальным обрабатывать навигации через поточные ответы. Можно составить ответы из различных частей, каждая из которых кэшируется отдельно. Использование потока гарантирует то, что первоначальная часть ответа отображается клиенту очень быстро, давая основной старт для анализа HTML и контекстным ресурсным запросам. </p>
+	<pwa-attention [context]="{ backgroundColor : '#e6ecff', color : '#03007B', icon : 'star'}">
+		<span style="font-weight: 400">Примечание :</span>  <span> Для большинства веб приложений невозможно уклониться от сетевого запроса при навигационных запросах: HTML каждого <span class="dark-blue">URL</span> имеет зависимость от данных сети доставки контента, или сайт использует динамическую компановку, запршивая её с сервера, и не вписывается в обычную оболочку приложения. Сервисный рабочий может установить статус кво при загрузки таких HTML. Используя потоки, можно отвечать на навигационные запросы практически сразу общими, кэшированными кусками HTML, к примеру полностью загрузить элемент <span class="purple">head</span> и частично отобразить элемент <span class="purple">body</span>, пока остальной контент, специфичный для данного <span class="dark-blue">URL</span> все еще загружается из сети.  </span>
+	</pwa-attention>
+	<h5 id="caching-static" pwa-query-selector>Кэширования статического HTML.</h5>
+	<p>Если простое веб приложение полагается полностью на набор стратических HTML документов, тогда ему повезло : путь для уклонения от сетевого запроса прост. Нужно, что бы сервисный рабочий, который ответственнен за навигационные запросы, отвечал предварительно кэшированными HTML, что какже не противоречит неблокирующей логике для поддержания актуальности этих HTML при развитии сайта. Первый подход - использовать обработчик события <span class="dark-blue">fetch</span> сервисного рабочего, который реализует  стратегию <a target="_blank" href="https://developers.google.com/web/fundamentals/instant-and-offline/offline-cookbook/#stale-while-revalidate"> stale-while-revalidate</a> для навигационных запросов.</p>
+	<pwa-example-code [context]="{header : 'Кэширование статического HTML', ext : 'ws.js'}">
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-red" >event</span> <span class="dark-blue" >=> &#123;
+			if (</span><span class="dark-red" >event.</span><span class="dark-blue" >request.mode === </span><span class="green" >'navigate'</span><span class="dark-blue" >) &#123;</span>
+				<span class="dark-red">event.</span><span class="dark-blue" >respondWith(async </span><span class="dark-sky" >function() &#123;</span>
+					<span class="grey">// Не обязательно: Нормализация входящих URL удалением параметров запроса,
+					// вместо https://example.com/page?key=value,
+					// будет https://example.com/page  - при записи и чтении кэша.
+					// Для статических HTML документов, параметры запроса не должны влиять на возвращаемый результат.
+					// Но если использовать параметры запроса, они будут уникально идентифицировать HTML.</span>
+					<span class="dark-blue" >const normalizedUrl = new </span><span class="purple" >URL(</span><span class="dark-red" >event.</span><span class="dark-blue" >request.url);</span>
+					<span class="dark-blue" >normalizedUrl.search = </span><span class="green" >"";</span>
+					<span class="grey">// Создаем промисы для обоих сетевых запросов,
+					// и копируем ответы. Они могут быть сохранены в кэш.</span>
+					<span class="dark-blue" >const fetchResponseP = </span><span class="purple" >fetch</span><span class="dark-blue" >(normalizedUrl);</span>
+					<span class="dark-blue" >const fetchResponseCloneP = fetchResponseP.then(</span><span class="dark-red" >r</span> <span class="dark-blue" >=> </span><span class="dark-red" >r</span><span class="dark-blue" >.clone()); </span>
+					<span class="grey">// event.waitUntil() - придерживает ответ клиенту
+					// для завершения кэширования</span>
+					<span class="dark-red" >event.</span><span class="dark-blue" >waitUntil(async </span><span class="dark-sky" >function() &#123;</span>
+							<span class="dark-blue" >const cache = await </span><span class="purple" >caches.</span><span class="dark-blue" >open(</span><span class="green" >'my-cache-name'</span><span class="dark-blue" >);
+						await cache.put(normalizedUrl, await fetchResponseCloneP);
+					&#125;()); </span>
+					<span class="grey">// При неудачном ответе их сети, лезем в кэш.</span>
+					<span class="dark-blue" >return (await </span><span class="purple" >caches</span><span class="dark-blue" >.match(normalizedUrl)) || fetchResponseP;
+				&#125;());
+			&#125;
+		&#125;);</span>
+	</pwa-example-code>
+	<p>Другой подход - использовать инструмент <a target="_blank" href="https://developers.google.com/web/tools/workbox/">Workbox</a>, который прикрепляется к процессу компоновки приложения для генерации сервисного рабочего, который обрабатывает кэширование всех статических ресурсов (не только HTML документов), обслуживая их сначала из кэша и содержащий их в актуальности.</p>
+	<h5 id="using-app-shell" pwa-query-selector>Использование оболочки приложения</h5>
+	<p>Если существует одностраничное приложение, тогда реализация архитектуры оболочки приложения очень проста. Есть четкая стратегия обоработки навигационных запросов без опоры на сеть: каждый навигационный запрос, вне зависимости от специфики  <span class="dark-blue">URL</span> завершается кэшированной копией общей оболочки приложения. Она включает все необходимое для запуска одностраничного приложения, и клиент-серверная логика реализуется через внутренние контентно-специфические <span class="dark-blue">URL</span>. Написанный вручную, соответствующий обработчик события <span class="dark-blue">fetch</span> может быть таким:  </p>
+	<pwa-example-code [context]="{header : 'Обработчик события запроса', ext : 'ws.js'}">
+		<span class="grey">// Не показано: обработчики install и activate,
+			//сохраняющие, кэширующие и обновляющие файл app-shell.html</span>
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-red" >event</span> <span class="dark-blue" >=> &#123;
+			if (</span><span class="dark-red" >event.</span><span class="dark-blue" >request.mode === </span><span class="green" >'navigate'</span><span class="dark-blue" >) &#123;</span>
+				<span class="grey">//Всегда отвечает на навигационный запрос кэшированным app-shell.html,
+				// вне зависимости от значения  event.request.url</span>
+				<span class="dark-red" >event.</span><span class="dark-blue" >respondWith(</span><span class="purple" >caches.</span><span class="dark-blue" >match(</span><span class="green" >'app-shell.html'</span><span class="dark-blue" >));
+			&#125;
+		&#125;);</span>
+	</pwa-example-code>
+	<p><a target="_blank" href="https://developers.google.com/web/tools/workbox/">Workbox</a> здесь может помочь, гарантируя, что <span class="dark-blue">app-shell.html</span> закэширована и актуальна, а так же предлагает настройку <a target="_blank" href="https://developers.google.com/web/tools/workbox/reference-docs/latest/module-workbox-sw.Router#registerNavigationRoute" >навигационных маршрутов</a>. </p>
+	<h4 id="performans-gotchas" pwa-query-selector>Подводные камни</h4>
+	<p>Если нет необходимости отвечать на навигационные запросы, используя кэшированные данные, но нужен сервисный рабочий для иной функциональности, к примеру, предоставление резервного содержимого или обработка входящих оповещений, тогда происходит затруднительная ситуация, и если не предпринять меры предосторожности, можно нанести вред производительности при добавлении сервисного рабочего. Избежание таких ситуаций - прочная основа программирования. </p>
+	<h5>Не используйте "пробросы" в обработчике <span class="dark-blue">fetch</span> </h5>
+	<p>Если сервисный рабочий используется только для входящих оповещений, можно ошибочно подумать, что такой оставшийся код ниже либо выполнится, либо окажется безполезным. </p>
+	<pwa-example-code [context]="{header : 'Опасная конструкция', ext : 'ws.js'}">
+		<span class="grey">// Не повторять!</span>
+		<span class="purple" >self.</span><span class="dark-blue" >addEventListener(</span><span class="green" >'fetch',</span> <span class="dark-red" >event</span> <span class="dark-blue" >=> &#123;</span>
+			<span class="dark-red" >event.</span><span class="dark-blue" >respondWith(</span><span class="purple" >fetch(</span><span class="dark-red" >event</span><span class="dark-blue" >.request));
+		&#125;);</span>
+	</pwa-example-code>
+	<p>Этот тип проброса обработчика <span class="dark-blue">fetch</span> очень коварен, поскольку все в приложении будет работать хорошо, но появиться небольшая задержка при запросах. Она будет появляться из-за стартующего сервисного рабочего, если он еще не запущен, так же будет задержка при передаче ответа из сервисного рабочего клиенту, сделавшему запрос. Если сервисный рабочий не содержит метода <span class="dark-blue">fetch</span>, браузер будет оповещать консоль об этом, и не будет запускать сервисного рабочего в дальнейшем при совершении запросов. Если сервисный рабочий не обрабатывает эти запросы, то лутше убрать совсем подобный код из приложения.</p>
+	<h5>Используйте предзагрузку навигационных запросов.</h5>
+	<p>Есть сценарии при которых обработчик <span class="dark-blue">fetch</span> необходим для использования стратегий кэширования определенных ресурсов, но архитектура приложения может сделать невозможным ответы навигационных запросов. Но все может прийти в норму при использовании кэшированных данных в навигационных запросах, однако сетевые навигационные запросы для обновления данных кэша могут происходить после загрузки страницы. Используйте функцию <span class="dark-blue">navigationPreload</span>, для таких случаев, которая может смягчить задержки, создаваемые сервисными рабочими не отвечающими на навигационные запросы. Так же она используется для запросов обновления данных, которые могут быть использованы клиентским кодом после загрузки страницы.  </p>
+</mat-card>

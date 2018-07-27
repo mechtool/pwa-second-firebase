@@ -1,0 +1,12 @@
+.pageImg,.registerError{
+    width: 80%;
+    margin-left: 10%;
+}
+
+@media (max-width: 599px) {
+    .registerError{
+        width: 100%;
+        margin-left: 0;
+    }
+
+}

@@ -8,6 +8,7 @@ const routes: Routes = [
     {path : 'app-shell', loadChildren : './components/app-shell/app-shell.module#AppShellModule'},
     {path : 'offline-cookbook', loadChildren : './components/offline-cookbook/offline-cookbook.module#OfflineCookbookModule'},
     {path : 'service-worker', loadChildren : './components/service-worker/service-worker.module#ServiceWorkerModule'},
+    {path : 'push-notification', loadChildren : './components/push-notification/push-notification.module#PushNotificationModule'},
     {path : '', component : GuidesComponent , data : {type : 'guides'}},
 
 

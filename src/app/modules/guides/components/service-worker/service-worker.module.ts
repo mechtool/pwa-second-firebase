@@ -6,7 +6,10 @@ import {FlexLayoutModule} from '@angular/flex-layout';
 import {MatCardModule} from '@angular/material';
 import {AppCommonModule} from '../../../common/app-common.module';
 import {ServiceWorkerComponent} from './components/overview/service-worker.component';
-
+import { LifeCycleComponent } from './components/life-cyrcle/life-cycle.component';
+import { PerformanceLoadingComponent } from './components/performance-loading/performance-loading.component';
+import { RegistrationComponent } from './components/registration/registration.component';
+import { SpeedUpComponent } from './components/speed-up/speed-up.component';
 
 @NgModule({
   imports: [
@@ -17,6 +20,12 @@ import {ServiceWorkerComponent} from './components/overview/service-worker.compo
       FlexLayoutModule,
       MatCardModule,
   ],
-  declarations: [ServiceWorkerComponent]
+  declarations: [
+      ServiceWorkerComponent,
+      LifeCycleComponent,
+      PerformanceLoadingComponent,
+      RegistrationComponent,
+      SpeedUpComponent,
+  ]
 })
 export class ServiceWorkerModule { }
