@@ -28,7 +28,7 @@ export class PerformanceLoadingComponent {
     ngAfterViewInit() {
         this.communication.sendResource({
             type: 'resource',
-            appHeader: 'Техника Offline',
+            appHeader: 'Производительность.',
             localData: {appAnchors: this.appAnchors, localMenu: this.localMenu}
         })
     }

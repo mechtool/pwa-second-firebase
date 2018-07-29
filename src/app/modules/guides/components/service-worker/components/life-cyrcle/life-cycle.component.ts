@@ -32,6 +32,6 @@ export class LifeCycleComponent implements AfterViewInit{
 
     constructor(private communication : CommunicationService){}
     ngAfterViewInit(){
-        this.communication.sendResource({type : 'resource', appHeader : 'Техника Offline', localData : { appAnchors : this.appAnchors, localMenu : this.localMenu}})
+        this.communication.sendResource({type : 'resource', appHeader : 'Жизненный цикл сервисного рабочего.', localData : { appAnchors : this.appAnchors, localMenu : this.localMenu}})
     }
 }

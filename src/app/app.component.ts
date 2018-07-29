@@ -87,7 +87,8 @@ export class AppComponent implements AfterViewInit{
                     new SideNavItem({text : 'Диалоги установки', href : '/guides/install-prompt/install-messages', activeClass : 'activeRoute', className : 'second'}),
                     new SideNavItem({text : 'Иконки и цвета', href : '/guides/install-prompt/icons-colors', activeClass : 'activeRoute',  className :'second'}),
                 ]})
-        ]})
+        ]}) ,
+        new SideNavItem({text : 'Примеры'})
     ];
     public appTheme = {theme : 'first-theme'};
     public openedSideNav = true;

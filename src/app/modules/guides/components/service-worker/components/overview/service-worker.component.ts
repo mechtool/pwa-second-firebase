@@ -28,6 +28,6 @@ export class ServiceWorkerComponent implements AfterViewInit{
 
     constructor(private communication : CommunicationService){}
     ngAfterViewInit(){
-        this.communication.sendResource({type : 'resource', appHeader : 'Техника Offline', localData : { appAnchors : this.appAnchors, localMenu : this.localMenu}})
+        this.communication.sendResource({type : 'resource', appHeader : 'Сервисный рабочий. Обзор.', localData : { appAnchors : this.appAnchors, localMenu : this.localMenu}})
     }
 }
