@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import {CommunicationService} from '../../services/mainAppService';
 
 @Component({
   selector: 'pwa-samples',
@@ -7,9 +8,14 @@ import { Component, OnInit } from '@angular/core';
 })
 export class SamplesComponent implements OnInit {
 
-  constructor() { }
+    constructor(private communication : CommunicationService) { }
 
-  ngOnInit() {
-  }
+    public gridItems = [
+        {title : 'Прогноз погоды', icon : 'assets/icons/samples/sample.png', link : '/samples/forecast', text : 'Маленькое приложение, получающее прогноз погоды для пати городов из выпадающего списка, оформленное в виде приложения PWA, демонстрирующее работу с сервисным рабочим, кэшем, применение и настройку файла манифеста, который можно проверить, загрузив это приложение на телефон и использовать его как нативное приложение при отсутствии сети.'},
+    ];
+
+    ngOnInit() {
+        this.communication.sendResource({type : 'resource', appHeader : 'Примеры приложений'})
+    }
 
 }

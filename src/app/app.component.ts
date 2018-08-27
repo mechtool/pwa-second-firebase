@@ -46,8 +46,6 @@ export class AppComponent implements AfterViewInit{
         ].forEach(item => {
             this.iconRegistry.addSvgIcon(item.name, this.sanitizer.bypassSecurityTrustResourceUrl(item.link));
         }) ;
-        //установка темы по умолчанию
-        this.overlayContainer.getContainerElement().classList.add(this.appTheme.theme);
         //подписка на взаимодействие между компонентами
         this.communication.communicateObservable.subscribe(resource => {
             if(resource.type == 'resource'){
@@ -88,9 +86,12 @@ export class AppComponent implements AfterViewInit{
                     new SideNavItem({text : 'Иконки и цвета', href : '/guides/install-prompt/icons-colors', activeClass : 'activeRoute',  className :'second'}),
                 ]})
         ]}) ,
-        new SideNavItem({text : 'Примеры'})
+        new SideNavItem({text : 'Примеры', href : '/samples', activeClass : 'activeRoute', className : 'first', icon : 'remove', children : [
+                new SideNavItem({text : 'Прогноз погоды', href : '/samples/forecast', activeClass : 'activeRoute', className : 'second'}),
+            ]}),
     ];
-    public appTheme = {theme : 'first-theme'};
+    public logoSource = {'first-theme' : '../assets/icons/app-shell/pwa-yellow.png', 'second-theme' : '../assets/icons/app-shell/pwa-blue.png', 'third-theme' : '../assets/icons/app-shell/pwa-green.png', 'forth-theme': '../assets/icons/app-shell/pwa-blue2.png'};
+    public appTheme = {theme : 'second-theme', logoSrc : '../assets/icons/app-shell/pwa-blue.png'};
     public openedSideNav = true;
     public toolbarButtons = [
         {className : 'menuButton', icon : 'menu', tip : 'Видимость меню', tipClassName : 'buttonTip'},
@@ -121,6 +122,11 @@ export class AppComponent implements AfterViewInit{
     }
     getState(outlet) {
         return outlet.activatedRouteData.type;
+    }
+
+    onChangeThemeColor(theme){
+        this.appTheme = {theme : theme.className, logoSrc : this.logoSource[theme.className]} ;
+        this.overlayContainer.getContainerElement().classList.add(theme.className);
     }
 
 }

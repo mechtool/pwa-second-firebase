@@ -1,4 +1,4 @@
-<div class="appContainer">
+<div class="appContainer" [ngClass]="appTheme.theme">
 	<pwa-routing-progress></pwa-routing-progress>
 	<mat-toolbar class="appToolBar" color="primary" fxLayout="row" fxLayout.lt-sm="column">
 		<mat-toolbar-row class="appToolBarRow" fxFlexOrder="1" fxFlexOrder.lt-sm="2" fxFlex="180px" fxFlex.lt-sm="56px">
@@ -11,12 +11,13 @@
 		<mat-toolbar-row fxFlexOrder="2" fxFlexOrder.lt-sm="1">
 			<div class="headerText">{{appHeader}}</div>
 			<div class="logoBlock" fxLayout="row">
-				<button class="format-color-button" mat-icon-button matTooltip="Темы" matTooltipClass="buttonTip">
+				<button class="format-color-button" mat-icon-button matTooltip="Темы" matTooltipClass="buttonTip" (click)="themeComponent.visible = !themeComponent.visible ">
 					<mat-icon svgIcon="format-color" class="format-color"></mat-icon>
 				</button>
 				<a class="logo-pwa" routerLink="/start-page">
-					<img  src="../assets/icons/app-shell/pwa-blue.png">
+					<img [src]="appTheme.logoSrc">
 				</a>
+				<pwa-theme-color #themeComponent (changeTheme)="onChangeThemeColor($event)"></pwa-theme-color>
 			</div>
 		</mat-toolbar-row>
 	</mat-toolbar>

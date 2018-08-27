@@ -20,9 +20,11 @@ import { StartPageComponent } from './start-page/start-page.component';
 import { ApiTableTemplateComponent } from './api-table-template/api-table-template.component';
 import { RoutingProgressComponent } from './routingProgress/routingProgress.component';
 import { ExampleCodeTemplateComponent } from './exampleCodeTemplate/exampleCodeTemplate.component';
+import { AttentionComponent } from './attention/attention.component';
+import { ThemeColorComponent } from './theme-color/theme-color.component';
 //-------------------directives------------------------------------------
 import { QuerySelectorDirective } from './directives/query-selector/query-selector.directive';
-import { AttentionComponent } from './attention/attention.component';
+
 
 @NgModule({
     imports: [
@@ -46,9 +48,12 @@ import { AttentionComponent } from './attention/attention.component';
         RoutingProgressComponent,
         ExampleCodeTemplateComponent,
         AttentionComponent,
+        ThemeColorComponent,
 
         //-------------directives------------------
         QuerySelectorDirective,
+
+        ThemeColorComponent,
     ],
     exports : [
         GridTemplateComponent,
@@ -58,6 +63,7 @@ import { AttentionComponent } from './attention/attention.component';
         RoutingProgressComponent,
         ExampleCodeTemplateComponent,
         AttentionComponent,
+        ThemeColorComponent,
 
         //------------directives-------------------
         QuerySelectorDirective

@@ -40,9 +40,9 @@ div.appContainer *[class^=mat], div.appContainer mat-card{
 }
 
 .buttonTip{
-    font-size: 12px;
-    font-weight: 200;
-    background-color: #706c6f !important;
+    font-size: 14px;
+    font-weight: 300;
+    background-color: rgba(69, 65, 68, 0.7) ;
 }
 
 .mat-sidenav-content > router-outlet + * > mat-card{
