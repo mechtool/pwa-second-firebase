@@ -46,9 +46,9 @@ div.appContainer *[class^=mat], div.appContainer mat-card{
 }
 
 .mat-sidenav-content > router-outlet + * > mat-card{
-    min-height: calc(100% - 50px);
+    min-height: 100%;
     padding: 48px;
-
+    box-sizing: border-box;
 }
 
 .exampleCode>div#preElem span{/*шрифты в образцах кода*/
@@ -60,59 +60,65 @@ pre{
     margin: 0;
     font-size: 16px;
 }
+table.mainTable{
+    width: 100%;
+}
+table.mainTable td{
+    padding: 16px !important;
+}
 
 /*-----------------template colors------------------------*/
-span.d-blue, span.blue{
+*.d-blue, *.blue{
     color : #0064d5;
 }
-span.d-dark-blue, span.dark-blue{
+*.d-dark-blue, *.dark-blue{
     color : #00008d;
 }
-span.d-lite-blue, span.lite-blue{
+*.d-lite-blue, *.lite-blue{
     color: #c1dfff;
 }
-span.d-green, span.green{
+*.d-green, *.green{
     color: #006500;
 }
-span.d-lite-green,span.lite-green{
+*.d-lite-green,*.lite-green{
     color: #c9ffc7;
 }
-span.d-grey, span.grey{
+*.d-grey, *.grey{
     color: #8a8a8a;
 }
-span.d-purple,span.purple{
+*.d-purple,*.purple{
     color: purple;
 }
-span.d-lite-purple, span.lite-purple{
+*.d-lite-purple, *.lite-purple{
     color: #f2c7ec;
 }
-span.d-sky, span.sky{
+*.d-sky, *.sky{
     color: #009a9d;
 }
-span.d-dark-sky, span.dark-sky{
+*.d-dark-sky, *.dark-sky{
     color: #007a7c;
 }
-span.d-lite-sky, span.lite-sky{
+*.d-lite-sky, *.lite-sky{
     color: #b7f6e2;
 }
-span.d-brown, span.brown{
+*.d-brown, *.brown{
     color : #9d3400;
 }
-span.d-lite-brown, span.lite-brown{
+*.d-lite-brown, *.lite-brown{
     color: #ffb57c;
 }
-span.d-red, span.red{
+*.d-red, *.red{
     color: #ff0000;
 }
-span.d-dark-red, span.dark-red{
+*.d-dark-red, *.dark-red{
     color: #b20000;
 }
-span.d-lite-red, span.lite-red{
+*.d-lite-red, *.lite-red{
     color: #ff847f;
 }
-span.d-yellow, span.yellow{
+*.d-yellow, *.yellow{
     color: #ffb900;
 }
-span.d-lite-yellow, span.lite-yellow{
+*.d-lite-yellow, *.lite-yellow{
     color: #ffef5c;
 }

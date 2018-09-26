@@ -1,0 +1,10 @@
+.imgContainer{
+    display: flex;
+    justify-content: center;
+}
+.imgContainer img{
+    width: 80%;
+    height: 80%;
+    max-width: initial;
+    max-height: initial;
+}

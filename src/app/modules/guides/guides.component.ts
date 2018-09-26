@@ -17,7 +17,6 @@ export class GuidesComponent implements OnInit {
         {title : 'Сервисный рабочий', icon : 'assets/icons/guidesIcons/serviceWorker.png',  link : '/guides/service-worker', text : 'Файл сервисного рабочего, который загружается при первом посещении приложения, содержащий структуру и стратегию кэширования ресурсов.'},
         {title : 'Входящие оповещения', icon : 'assets/icons/guidesIcons/push.png',  link : '/guides/push-notification', text : 'Механизм общения сервера приложения и приложения на устройстве пользователя.'},
         {title : 'Установка на устройство', icon : 'assets/icons/guidesIcons/app-install.png',  link : '/guides/install-prompt/install-messages', text : 'Механизм установки иконки вызова приложения на устройство пользователя.'},
-
     ];
 
   ngOnInit() {

@@ -83,7 +83,7 @@ export class RouterService { //сервис занимается маршрут�
         //
         //снятие класса активности с активных элементов меню
         //и установка класса активности на текущем элементе
-        this.root.localData.appAnchors && (this.root.localData.appAnchors.forEach((el : ElementRef) => {
+        this.root.localData && this.root.localData.appAnchors && (this.root.localData.appAnchors.forEach((el : ElementRef) => {
             let rect = (el.nativeElement as HTMLElement).getBoundingClientRect();
             if(rect.top <= 100 && rect.top >= 70){ //если элемент находиться у верхнего края клиентской области
                 this.root.localData.localMenu.forEach(menuEl => {

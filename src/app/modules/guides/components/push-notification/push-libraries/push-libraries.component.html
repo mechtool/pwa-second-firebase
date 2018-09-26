@@ -1,0 +1,153 @@
+<mat-card class="pwa-page" >
+	<h4 id="webPushSendLibrary" pwa-query-selector>Отправка сообщений с помощью библиотек.</h4>
+	<p>Работа с входящими оповещениями является крайне неудобна для начинающих разработчиков. Для запуска сообщения приложению необходимо выполнить <span class="dark-blue">POST</span> запрос на сервис входящих уведомлений, строго соблюдая протокол <a href="https://tools.ietf.org/html/draft-ietf-webpush-protocol" target="_blank">web push</a>. Что бы использовать его во всех браузерах, необходимо сгенерировать специальный <a href="https://tools.ietf.org/html/draft-thomson-webpush-vapid-02" target="_blank">VAPID</a> ключ, который требуется для настройки заголовка аутентификации для определения полномочий приложения при отправки сообщения. Для отправки блока данных, его необходимо <a href="https://tools.ietf.org/html/draft-ietf-webpush-encryption-09" target="_blank" >кодировать</a>, и добавлять специальный заголовок декодирования, для того, что бы браузер, получающий сообщение мог расшифровать сообщение правильно.<br>
+	Основная проблема с запуском сообщения состоит в том, что если разработчик сталкивается с проблемой в процессе запуска, её очень трудно диагносцировать. Такое положение улутшается со временем и распостранением поддержки входящих уведомлений в браузерах. По этой причине рекомендуется использовать библиотеку для обработки кодирования, форматирования и запуска входящих оповещений. В этой части будет рассмотрена работа с библиотекой <a href="" target="_blank">web-push</a> для сервера на NodeJs. Другие языки имеют небольшие отличия от работы с данной библиотекой на Javascript. </p>
+	<pwa-attention  [context]="{icon : 'attention', color : '#0068d4', backgroundColor : '#d2e8ff'}">
+		<span style="font-weight: 400">Внимание!</span>
+		<span> Если нужна библиотека для других языков, заходим на <a href="https://github.com/web-push-libs/" target="_blank">страницу</a> библиотеки на GIT.</span>
+	</pwa-attention >
+	<p>Далее пройдем следующие темы:</p>
+		<ul>
+			<li>Передача объекта подписки на сервер приложения и сохранения его.</li>
+			<li>Получение сохраненного объекта подписки и запуск сообщения для пользователя.</li>
+		</ul>
+		<h4 id="saveSubscription" pwa-query-selector>Сохранение объекта подписки.</h4>
+		<p>сохранение и запрос объекта подписки из базы данных варьируется в зависимости от серверного языка и применяемой базы данных, но ниже распологается пример того, как это можно выполнить в среде <span class="dark-blue">NodeJs</span>, получив объект подписки из вызова метода <span class="dark-red">registration.pushManager.subscribe(subscribeOptions)</span>.</p>
+<pwa-example-code [context]="{header : 'Метод отправки объекта подписки на сервер', ext : 'index.js'}"><pre><span class="purple" >function</span> <span class="dark-blue" >sendSubscriptionToBackEnd(subscription)  &#123;
+   return</span> <span class="purple" >fetch(</span><span class="green" >'/api/save-subscription/'</span><span class="dark-blue" >,  &#123;</span>
+      <span class="brown" >method : </span><span class="green" >'POST',</span>
+      <span class="brown" >headers :  &#123;</span>
+         <span class="green" >'Content-Type' : 'application/json' </span>
+      <span class="brown" > &#125;,
+      body : </span><span class="purple" >JSON.</span><span class="dark-blue" >stringify(subscription)
+   &#125;).then(function(</span><span class="dark-red" >response</span><span class="d-dark-blue" >)  &#123;
+      if (!</span> <span class="dark-red" >response.</span><span class="dark-blue" >ok)  &#123;
+         throw new </span><span class="purple" >Error(</span><span class="green" >'Получен код ошибки с сервера'</span><span class="dark-blue" >);
+       &#125;
+      return </span> <span class="dark-red" >response</span><span class="dark-blue" >.json();
+    &#125;).then(function(</span><span class="dark-red" >responseData</span><span class="dark-blue" >)  &#123;
+      if (!(</span><span class="dark-red" >responseData.</span><span class="dark-blue" >data && </span> <span class="dark-red" >responseData</span><span class="dark-blue" >.data.success))  &#123;
+         throw new </span><span class="purple" >Error(</span><span class="green" >'Неудачный серверный запрос'</span><span class="dark-blue" >);
+       &#125;
+    &#125;); </span>
+ &#125;</pre>
+		</pwa-example-code>
+	<p>На стороне сервера, сервер <a href="http://expressjs.com" target="_blank">Express</a> слушает глагол <span class="dark-blue">POST</span> на путь <span class="dark-blue">/api/save-subscription/</span>. В этом маршруте происходит проверка объекта подписки на присутствие двух свойст, и если они не существуют, тогда возвращаем ответ с подробностями об ошибке, иначе - продолжаем обработку запроса. </p>
+	<pwa-example-code [context]="{header : 'Метод отправки объекта подписки на сервер', ext : 'server.js'}"><pre>
+<span class="purple" >app.</span><span class="dark-blue" >post(</span><span class="green" >'/api/save-subscription/'</span><span class="dark-blue" >, function (</span><span class="dark-red" >req, res</span><span class="dark-blue" >) &#123; </span>
+   <span class="grey">//Утиная типизация двух свойств.</span>
+   <span class="dark-blue" >if (!</span><span class="dark-red" >req.</span><span class="dark-blue" >body || !</span> <span class="dark-red" >req.</span><span class="dark-blue" >body.endpoint) &#123;</span>
+   <span class="grey">// Объект подписки не корректен.</span>
+   <span class="dark-red" >res.</span><span class="dark-blue" >status(400);</span>
+   <span class="dark-red" >res.</span><span class="dark-blue" >setHeader(</span><span class="green" >'Content-Type', 'application/json'</span><span class="dark-blue" >);</span>
+   <span class="dark-red" >res</span><span class="dark-blue" >.send(JSON.stringify(&#123;
+         error: &#123;
+            id : </span><span class="green" >'no-endpoint',</span>
+            <span class="dark-blue" >message :</span> <span class="green" >'Объект подписки должени иметь поле адреса.'</span>
+         <span class="dark-blue" >&#125;
+      &#125;));
+   &#125;
+   saveSubscriptionToDatabase(</span><span class="dark-red"  >req</span><span class="dark-blue" >.body)...;
+&#125;);  </span></pre></pwa-example-code>
+	<pwa-attention  [context]="{icon : 'attention', color : '#0068d4', backgroundColor : '#d2e8ff'}">
+		<span style="font-weight: 400">Внимание!</span>
+		<span> В примере выше проверяется наличие только двух свойств, если нужно поддержать присутствие тела сообщения, нужно так же проверять поле аутентификации (<span class="dark-blue">auth</span> ) и поле типа кодировки (<span class="dark-blue">p256dh</span> ).</span>
+	</pwa-attention >
+	<p>Если объект подписки корректен, нужно сохранить его в базу данных и вернуть ответ результата сохранения, либо ошибку процесса сохранения.</p>
+<pwa-example-code [context]="{header : 'Вызов метода отправки объекта подписки в базу и обработка результата', ext : 'server.js'}"><pre><span class="dark-blue" >saveSubscriptionToDatabase(req.body)
+   .then(function(</span> <span class="dark-red" >subscriptionId</span><span class="dark-blue" >) &#123;</span>
+      <span class="dark-red" >res</span><span class="dark-blue" >.setHeader(</span><span class="green" >'Content-Type', 'application/json'</span><span class="dark-blue" >);</span>
+      <span class="dark-red" >res</span><span class="dark-blue" >.send(JSON.stringify(&#123; data: &#123; success: true &#125;&#125;));
+&#125;)
+   .catch(function(</span><span class="dark-red" >err</span><span class="dark-blue" >) &#123;</span>
+      <span class="dark-red" >res</span><span class="dark-blue" >.status(500);</span>
+      <span class="dark-red" >res</span><span class="dark-blue" >.setHeader(</span><span class="green" >'Content-Type', 'application/json'</span><span class="dark-blue" >);</span>
+      <span class="dark-red" >res</span><span class="dark-blue" >.send(JSON.stringify(&#123;
+         error: &#123;
+            id : </span><span class="green" >'Невозможно сохранить объект подписки'</span><span class="dark-blue" >,
+            message :</span><span class="green" >'Объект подписки был получен сервером, но не сохранен в базу данных'</span><span class="dark-blue" >&#125;
+   &#125;));
+&#125;);</span></pre></pwa-example-code>
+	<p>Сам метод вызова контекста базы данных - сохранение и возврат идентификатора записи или ошибка</p>
+<pwa-example-code [context]="{header : 'Вызов метода сохранения для базы MongoDb ', ext : 'server.js'}"><pre><span class="purple" >function</span> <span class="dark-blue" >saveSubscriptionToDatabase(subscription) &#123;
+   return new </span><span class="purple" >Promise</span><span class="dark-blue" >(function(</span><span class="dark-red" >resolve, reject</span><span class="dark-blue" >) &#123;
+      db.insert(subscription, function(</span><span class="dark-red"  >err, newDoc</span><span class="dark-blue" >) &#123;
+         if (</span><span class="dark-red" >err</span><span class="dark-blue" >) &#123;</span>
+            <span class="dark-red" >reject(err);</span>
+            <span class="dark-blue" >return;
+         &#125;</span>
+         <span class="dark-red" >resolve(newDoc</span><span class="dark-blue" >._id);
+      &#125;);
+   &#125;);
+&#125;;</span></pre></pwa-example-code>
+	<h4 id="sendPush" pwa-query-selector>Отправка уведомления.</h4>
+	<p>Когда приходит время посылать уведомление пользователю, необходимо организовать интерфейс администратора, к примеру, в котором можно было бы конфигурировать и запускать уведомление. Или можно написать отдельную программу, запускаемую локально для этих целей, или использовать другой подход, который позволял бы получать доступ к списку объектов подписки и вызывать код, запускающий отправку сообщений. Ниже, рассмотрено небольшое приложение, использующее библиотеку <span class="dark-blue">web-push</span>. При подписке пользователя в методе <span class="dark-blue">subscribe()</span> необходимо использовать ключ приложения  <span class="dark-blue">VAPID</span>, который генерируется на сервере вручную (для целей упрощения), но для его генерации так же можно использовать и библиотеку.  </p>
+<pwa-example-code [context]="{header : 'VAPID ключ', ext : 'server.js'}"><pre><span class="dark-blue" >const vapidKeys = &#123;</span>
+   <span class="brown" >publicKey :</span>
+      <span class="green" >'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U'</span>,
+   <span class="brown" >privateKey :
+      </span><span class="green" >'UUxI4O8-FbRouAevSmBQ6o18hgE4nSG3qwvJTfKc-ls'</span><span class="dark-blue">
+&#125;;</span></pre></pwa-example-code>
+<p>Установка модуля библиотеки</p>
+<pwa-example-code [context]="{header : 'Установка модуля', ext : 'terminal'}"><pre>npm install web-push --save</pre></pwa-example-code>
+<p>Подгрузка модуля и регистрация в нем стороннего ключа. </p>
+<pwa-example-code [context]="{header : 'Регистрация ключа', ext : 'server.js'}"><pre><span class="dark-blue" >const webpush = require(</span><span class="green" >'web-push'</span><span class="dark-blue" >);
+const vapidKeys = &#123; </span>
+   <span class="brown" >publicKey :</span>
+      <span class="green" >'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U', </span>
+   <span class="brown" >privateKey : </span><span class="green" >'UUxI4O8-FbRouAevSmBQ6o18hgE4nSG3qwvJTfKc-ls'</span>
+<span class="dark-blue" >&#125;;
+webpush.setVapidDetails(</span>
+   <span class="green" >'mailto:web-push-book@gauntface.com',</span>
+   <span class="dark-blue" >vapidKeys.publicKey,
+   vapidKeys.privateKey
+);</span></pre></pwa-example-code>
+	<p>В объект регистрации включено поле почты. Эта запись необходима и должна содержать либо URL, либо почту отправителя на тот случай, что бы сервис уведомлений мог связаться с отправителем и сообщить о проблемах доставки.<br>
+	Следующий шаг - отправка сообщения. Ниже, представлен пример панели администратора - интерфейс настройки и отправки сообщений. Нажатие на красную кнопку приводит в формированию <span class="dark-blue">PUSH</span> запрса на сервер приложения по адресу <span class="dark-red">/api/trigger-push-msg/</span>, что является сигналом для сервера на формироване и отправку сообщения, поэтому на сервере определен обработчик глагола на URL-адрес выше. </p>
+	<div class="imgContainer">
+		<img src="/assets/icons/push-library/admin-panel.png">
+	</div>
+	<p>Определение обработчика...</p>
+<pwa-example-code [context]="{header : 'Определение обработчика запроса', ext : 'server.js'}"><pre><span class="grey" >//Определение глагола</span>
+<span class="dark-blue" >app.post(</span><span class="green" >'/api/trigger-push-msg/'</span><span class="dark-blue" >, function (</span><span class="dark-red" >req, res</span><span class="dark-blue" >) &#123;
+   getSubscriptionsFromDatabase()</span><span class="grey">//Получение подписки из метода запроса из базы данных</span><span class="dark-blue">
+      .then(function(</span><span class="dark-red" >subscriptions</span><span class="dark-blue" >) &#123; </span>
+   <span class="grey">//цикл по коллекции подписок</span><span class="dark-blue">
+         for (let i = 0; i < </span><span class="dark-red" >subscriptions</span><span class="dark-blue" >.length; i++) &#123;
+            const subscription = </span><span class="dark-red" >subscriptions</span><span class="dark-blue" >[i];</span>
+           <span class="grey">//запуск метода отправки сообщений</span><span class="dark-blue">
+            triggerPushMsg(</span><span class="dark-red" >subscription</span><span class="dark-blue" >, dataToSend);
+         &#125;
+   &#125;)
+&#125;</span></pre></pwa-example-code>
+	<p>Функция отправки запроса - отправляет запрос для каждого объекта подписки...</p>
+<pwa-example-code [context]="{header : 'Функция отправки запроса', ext : 'server.js'}"><pre><span class="purple" >function</span> <span class="dark-blue" >triggerPushMsg (subscription, dataToSend) &#123;</span>
+   <span class="grey">//вызов метода библиотеки</span>
+	<span class="dark-blue" >return webpush.sendNotification(subscription, dataToSend)</span>
+	<span class="grey">//Важная обработка диагностики объекта подписки</span><span class="dark-blue">
+      .catch((</span><span class="dark-red" >err</span><span class="dark-blue" >) => &#123;
+         if (</span><span class="dark-red" >err</span><span class="dark-blue" >.statusCode === 410) &#123;</span>
+         <span class="grey">//удаления объекта подписки из базы, если статус 410</span>
+            <span class="dark-blue" >return deleteSubscriptionFromDatabase(subscription._id);
+         &#125; else &#123;</span>
+            <span class="grey">Предупреждение о истечении подписки в консоль</span>
+            <span class="dark-blue" >console.log(</span><span class="green" >'Объект подписки истек: '</span><span class="dark-blue" >, err);
+         &#125;
+    &#125;);
+&#125;</span></pre></pwa-example-code>
+	<p>Выов метода <span class="dark-blue"> webpush.sendNotification()</span> возвращает промис. Если сообщение было отправлено успешно, промис разрешится и делать ничего не придется. Если промис откажет нужно исследовать объект ошибки, который проинформирует о причине и действительности объекта подписки. Для быстрого определения типа ошибки используется его статус код. В примере выше статус коды <span class="dark-blue">404, 410</span> -  'Not Found' и 'Gone' (не найден и удален)<br>
+	После цикла через коллекцию объектов подписки нужно вернуть ответ в браузер, что бы приложение могло понять успешность или не успешность запроса.</p>
+	<pwa-example-code [context]="{header : 'Завершающая обработка в функции', ext : 'server.js'}"><pre><span class="dark-blue"  >.then(() => &#123;
+   res.setHeader(</span><span class="green" >'Content-Type', 'application/json'</span><span class="dark-blue" >);
+   res.send(JSON.stringify(&#123;</span><span class="brown" >data : </span><span class="dark-blue" >&#123; success: true &#125; &#125;));
+&#125;).catch(function(</span><span class="dark-red" >err</span><span class="dark-blue" >) &#123; </span>
+       <span class="dark-red" >res</span><span class="dark-blue" >.status(500);</span>
+       <span class="dark-red" >res</span><span class="dark-blue" >.setHeader(</span><span class="green" >'Content-Type', 'application/json'</span><span class="dark-blue" >);   </span>
+       <span class="dark-red" >res</span><span class="dark-blue" >.send(JSON.stringify(&#123;
+           error: &#123;
+              id: </span><span class="green" >'Невозможно отправить сообщение'</span><span class="dark-blue" >,
+              message: </span><span class="green" >'Невозмодно отправить сообщение : '</span><span class="dark-blue" > + </span><span class="green" >'$&#123;err.message&#125;'</span>
+        <span class="dark-blue" >&#125;
+   &#125;));
+&#125;);</span></pre></pwa-example-code>
+</mat-card>

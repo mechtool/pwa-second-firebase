@@ -10,6 +10,9 @@ import {PnIntroductionComponent} from './introduction/pn-introduction.component'
 import {PermissionUxComponent} from './permission-ux/permission-ux.component';
 import {PrincipleOperationComponent} from './principle-operation/principle-operation.component';
 import {SubscribingUserComponent} from './subscribing-user/subscribing-user.component';
+import { PushLibrariesComponent } from './push-libraries/push-libraries.component';
+import { PushProtocolComponent } from './push-protocol/push-protocol.component';
+import { PushEventsComponent } from './push-events/push-events.component';
 
 @NgModule({
   imports: [
@@ -24,6 +27,9 @@ import {SubscribingUserComponent} from './subscribing-user/subscribing-user.comp
       PermissionUxComponent,
       PrincipleOperationComponent,
       SubscribingUserComponent,
+      PushLibrariesComponent,
+      PushProtocolComponent,
+      PushEventsComponent,
   ]
 })
 export class PushNotificationModule { }

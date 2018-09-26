@@ -1,0 +1,165 @@
+<mat-card class="pwa-page" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html"
+          xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html"
+          xmlns="http://www.w3.org/1999/html">
+	<h4 id="webPushProtocol" pwa-query-selector>Web Push протокол.</h4>
+	<p>На странице использования библиотеки <span class="dark-blue">web-push</span> рассмотрели запуск оповещений, но что конкретно делает библиотека? Она выполняет сетевые запросы, гарантируя их оформления в правильном формате, согласно спецификации <a href="https://tools.ietf.org/html/draft-ietf-webpush-protocol" target="_blank">Web Push Protocol</a>. Схематично изображено ниже.</p>
+	<div class="imgContainer">
+		<img src="/assets/icons/push-protocol/server-to-push-service.svg">
+	</div>
+	<p>В этой части рассмотрим как сервер приложения может идентифицироваться на сервисе оповещений при помощи серверного ключа и как отправлять кодированные данные, т.е. то, что делает библиотека.</p>
+	<h4 id="appKeys" pwa-query-selector>Серверный ключи приложения.</h4>
+	<p>При подписки пользователя, в объект подписки передается серверный ключ. Этот ключ состоит из двух частей: открытый ключ и закрытый ключ (просто содержит два поля данных), переправляется в сервис уведомлений и используется для проверки приложения, подписывающее пользователя, является ли оно тем же самым приложением, которое отправляет сооющения. Когда запускается сообщение, на сервис уведомлений так же отправляются специальные заголовки, позволяющие сервису однозначно аутентифицировать приложение (определяется в спецификации <a href="https://tools.ietf.org/html/draft-thomson-webpush-vapid" target="_blank"></a>). Такая подпись, добавляемая в заголовок по определенным правилам в запросе называется <a href="https://jwt.io" target="_blank" >JSON WEB TOKEN</a>. Последовательность процесса передачи сообщения:</p>
+	<ol>
+		<li>Сервер приложения, при отправке сообщения на сервис уведомлений, "подписывается" JSON объектом (JWT), содержащий <b>закрытый</b> серверный ключ</li>
+		<li>Эта информация посылается на сервис в заголовках запроса с глаголом <span class="dark-blue">POST</span> </li>
+		<li>Сервис сообщений использует ранее сохраненный <b>открытый</b> ключ (тот, который был передан при подписке пользователя в методе <span class="dark-blue">pushManager.subscribe()</span>) для проверки полученной информации от сервера приложения, подписанной закрытым ключем. </li>
+		<li>Если информация, подписанная закрытым ключем подходит под отпечаток открытого ключа, сервис сообщений отправляет сообщение пользователю.</li>
+	</ol>
+	<p>Схематично эта технологическая последовательность описана ниже:</p>
+	<div class="imgContainer">
+		<img src="/assets/icons/push-protocol/application-server-key-send.svg">
+	</div>
+	<h4 id="jwtToken" pwa-query-selector >JSON WEB TOKEN (JWT)</h4>
+	<p>Это способ передачи сообщения постороннему сервису, так что бы получатель мог идентифицировать отправителя. Когда сервис сообщений получает сообщение, ему нужен открытый ключ отправителя для проверки подписи JWT. Если подпись корректна и JWT в заголовке сформирован правильно, тогда он будет соответствовать открытой части ключа. Существует библиотека (<a href="https://jwt.io" target="_blank">jwt.io</a> ), позволяющая формировать правильную подпись. Однако, эту подпись можно сформировать вручную.</p>
+	<h4 >Объект подписи JWT</h4>
+	<p>Подпись JWT - это просто строка, состоящая из трех частей, разделенных точкой.</p>
+	<div class="imgContainer">
+		<img src="/assets/icons/push-protocol/authorization-jwt-diagram-header.svg">
+	</div>
+	<p>Первая и вторая часть (JWT Info, JWT data) - части, кодированные в формате <span class="dark-blue">base64</span>, являются общедоступными. Первая часть (info) - содержит информацию о самом ключе JWT, указывающий на тип и алгоритм создания подписи, она должна содержать следующую информацию:  </p>
+<pwa-example-code [context]="{header : 'Первая часть JWT (info)', ext : 'json'}"><pre><span class="dark-blue" >&#123;
+   "typ": "JWT",
+   "alg": "ES256"
+  &#125;</span></pre></pwa-example-code>
+	<p>Вторая часть предоставляет информацию об отправители сообщения, времени истечения сообщения и пр. Для web push данные имеют такой формат:</p>
+	<pwa-example-code [context]="{header : 'Вторая часть JWT (data)', ext : 'json'}"><pre><span class="dark-blue" >&#123;
+   "aud": "https://some-push-service.org",
+   "exp": "1469618703",
+   "sub": "mailto:example@web-push-book.org"
+  &#125;</span></pre></pwa-example-code>
+	<ul>
+		<li><span class="dark-blue">aud</span> - адрес сервиса уведомлений, получаемый из объекта подписки. </li>
+		<li><span class="dark-blue">exp</span> - период истечения (срок годности) сообщения. Является отметкой времени в секундах и должна быть не более 24 часов.</li>
+		<li><span class="dark-blue">sub</span> - содержит или URL, или адрес электронной почты, в случае, если сервису сообщений понадобиться связаться с отправителем</li>
+	</ul>
+	<p>Третья часть (подпись) - результат соединения первых двух с символом точкой (не подписанный токен). Процесс подписи требует кодирования этого неподписанного токена, используя алгоритм <span class="dark-blue">ES256</span>. Используя объект <a href="https://developer.mozilla.org/en-US/docs/Web/API/Crypto" target="_blank">Crуpto</a>, можно создать подпись: </p>
+<pwa-example-code [context]="{header : 'Формирование подписи токена ', ext : '.js'}"><pre><span class="grey">// Объект кодирования строку UTF-8 в  ArrayBuffer.</span>
+<span class="dark-blue" >const utf8Encoder = new </span><span class="purple"  >TextEncoder(</span><span class="green" >'utf-8'</span><span class="dark-blue" >)</span>;
+<span class="grey">//Неподписанный токен - результат конкатенации base64 строк</span>
+<span class="dark-blue" >const unsignedToken = .....; </span>
+<span class="grey">// Составление криптографического ключа</span>
+<span class="dark-blue" >const key = &#123;
+   kty : </span><span class="green" >'EC'</span><span class="dark-blue" >,
+   crv : </span><span class="green" >'P-256'</span><span class="dark-blue" >,
+   x : </span><span class="purple" >window</span><span class="dark-blue" >.uint8ArrayToBase64Url(
+      applicationServerKeys.publicKey.subarray(1, 33)),
+   y : </span><span class="purple" >window</span><span class="dark-blue" >.uint8ArrayToBase64Url(
+      applicationServerKeys.publicKey.subarray(33, 65)),
+   d : </span><span class="purple" >window</span><span class="dark-blue" >.uint8ArrayToBase64Url(applicationServerKeys.privateKey),
+&#125;;  </span>
+<span class="grey">// Добавление крипто-ключа и генерация подписи</span>
+<span class="dark-blue" >return</span> <span class="purple" >crypto</span><span class="dark-blue" >.subtle.importKey(</span><span class="green" >'jwk'</span><span class="dark-blue" >, key, &#123;
+   name : </span><span class="green" >'ECDSA'</span><span class="dark-blue" >, namedCurve : </span><span class="green" >'P-256'</span><span class="dark-blue" >,
+&#125;, true, [</span><span class="green" >'sign'</span><span class="dark-blue" >])
+   .then((</span><span class="dark-red" >key</span><span class="dark-blue" >) => &#123;
+      return </span><span class="purple" >crypto</span><span class="dark-blue" >.subtle.sign(&#123;
+         name : </span><span class="green" >'ECDSA'</span><span class="dark-blue" >,
+         hash: &#123;
+            name : </span><span class="green" >'SHA-256'</span><span class="dark-blue" >,
+         &#125;,
+      &#125;,</span><span class="dark-red" >key</span><span class="dark-blue" >, utf8Encoder.encode(unsignedToken));
+   &#125;).then((</span><span class="dark-red" >signature</span><span class="dark-blue" >) => &#123;
+         console.log(</span><span class="green" >'Подпись: '</span><span class="dark-red" >, signature</span><span class="dark-blue" >);
+&#125;);</span></pre></pwa-example-code>
+	<p>Теперь эту подпись можно вставить как третью часть общего JWT токена в заголовок запроса авторизации, добавив перед ним строку <span class="dark-blue">WebPush</span> с пробелом</p>
+	<pwa-example-code [context]="{header : 'Заголовок авторизации', ext : '.js'}"><pre><span class="dark-blue" >Authorization : </span><span class="green" >'WebPush [JWT Info].[JWT Data].[Signature]'</span></pre></pwa-example-code>
+	<p>Протокол Web Pus требует, что бы открытая часть серверного ключа была передана в заголовке <span class="dark-blue">Crypto-Key</span> в формате <span class="dark-blue">base64</span> с префиксом <span class="dark-blue">p256ecdsa=</span>.</p>
+	<pwa-example-code [context]="{header : 'Заголовок открытой части ключа', ext : '.js'}"><pre><span class="dark-blue" >Crypto-Key : </span><span class="green" >' p256ecdsa=[открытый ключ в формате base64]'</span></pre></pwa-example-code>
+	<h4 id="payload-encryption" pwa-query-selector>Кодирование информации.</h4>
+	<p>В этой части рассмотрим отправку кодированной информации, которую браузер получателя мог бы расшифровать и принять. В связи с этим возникает вопрос, а зачем вообще кодировать информацию? Привлекательность входящих уведомлений состоит в единообразие API для различных браузеров в части работы с входящими уведомлениями. Разработчику не нужно заботиться о том, что такое сервис уведомлений вообще. Он создает запрос в правильном формате и знает, что сообщение будет отправлено. Другая сторона процесса - не надежность и не безопасность приватности постороннего сервиса уведомлений. Это преодалевается кодированием информации в сообщении, которую не может прочитать посторнний сервис, а может прочитать браузер получателя сообщения, расшифровав его.<br>
+	Кодирование полезной нагрузки определяется спецификацией <a href="https://tools.ietf.org/html/draft-ietf-webpush-encryption-09" target="_blank">Message Encryption</a>. Но перед тем, как рассматривать необходимые шаги кодирования сообщений, нужно рассмотреть техники, которые будут использоваться в течении этого процесса.</p>
+	<h4>ECDH и HKDF</h4>
+	<h5 id="ECDH" pwa-query-selector>ECDH - Elliptic Curve Diffie Hellman <span style="font-size: 18px; font-weight: 300" >( Эллептические кривые Дефи Хелмана ) Обмен ключами на основе эллептических кривых.</span></h5> <p>Представим, что два человека хотят поделиться информацией между собой. К примеру, Алиса и Боб. Каждый из них имеет свою пару ключей (открытый и закрытый). Между собой они обмениваются открытыми ключами. Полезное свойство генерации ключей ECDH в том, что Алиса может использовать свой закрытый ключ, а Боб использовать её открытый ключ, что бы сгенерировать секретное значение <span class="dark-blue">'X'</span>. Бом может сделать тоже самое - взять свой закрытый ключ, а Алиса его открытый ключ и независимо сгененрировать тоже значение <span class="dark-blue">'X'</span>. Этои механизм делает секретное слово разделяемым между Алисой и Бобом, только они должны обменяться открытыми ключами, и они смогут использовать это секретное слово в качестве ключа для кодирования и декодирования сообщений между собой. Более подробно об эллептических кривых Дефи Хелмана в <a href="https://www.youtube.com/watch?v=F3zzNa42-tQ" target="_blank">этом видео</a>.<br>
+	Все вышесказанное в терминах JavaScript выглядит так:</p>
+<pwa-example-code [context]="{header : 'HKDF функция', ext : '.js'}"><pre><span class="dark-blue" >const keyCurve = </span><span class="purple" >crypto</span><span class="dark-blue" >.createECDH(</span><span class="green" >'prime256v1'</span><span class="dark-blue" >);
+keyCurve.generateKeys();</span>
+<span class="grey">//Получение открытого ключа</span>
+<span class="dark-blue" >const publicKey = keyCurve.getPublicKey();</span>
+<span class="grey">//Получение закрытого ключа</span>
+<span class="dark-blue" >const privateKey = keyCurve.getPrivateKey();</span></pre></pwa-example-code>
+	<h5 id="ECDF" pwa-query-selector><a href="https://tools.ietf.org/html/rfc5869#ref-HMAC" target="_blank" >HKDF</a> - функция создания HMAC ключей</h5>
+	<p>Эта функция, которая трансформирует слабозащищенные ключи  в криптографически сильные ключи для аутентификации сообщений - HMAC ( Keyed-Hashing for Message Authentication ) Хешевые ключи для аутентификации сообщений. Может использоваться для конвертации эллептических кривых в ключи пригодные для использования в кодировании, интегрированных проверках (проверок на целостность данных) или аутентификации. <br>
+	Спецификация определяет требования к кодированию - использование алгоритма хеширования <span class="dark-blue">SHA-256</span>, а итоговые ключи во входящих уведомлениях не должны превышать 256 бит (32 байта). В NodeJs это реализуется следующим образом:</p>
+<pwa-example-code [context]="{header : 'ECDH генерация ключа', ext : '.js'}"><pre><span class="grey">// Упрощунная HKDF, возвращает ключи до 32 байтов</span>
+<span class="dark-blue" >function hkdf(</span><span class="dark-red" >salt, ikm, info, length</span><span class="dark-blue" >) &#123;</span>
+   <span class="grey">// Выделение</span>
+   <span class="dark-blue" >const keyHmac = <span class="purple" >crypto</span><span class="dark-blue" >.createHmac(</span>'sha256'</span><span class="dark-red" >, salt</span><span class="dark-blue" >);
+  keyHmac.update(</span><span class="dark-red" >ikm</span><span class="dark-blue" >);
+   const key = </span><span class="dark-red" >keyHmac</span><span class="dark-blue" >.digest();</span>
+
+   <span class="grey">// Расширение</span>
+   <span class="dark-blue" >const infoHmac = </span><span class="purple" >crypto</span><span class="dark-blue" >.createHmac(</span><span class="green" >'sha256',</span><span class="dark-red" >key</span><span class="dark-blue" >);
+   infoHmac.update(</span><span class="dark-red" >info</span><span class="dark-blue" >);</span>
+
+   <span class="grey">//Однобайтовый буфер, содержащий только 0x01</span>
+   <span class="dark-blue" >const ONE_BUFFER = new </span><span class="purple" >Buffer</span><span class="dark-blue" >(1).fill(1);
+   infoHmac.update(ONE_BUFFER);
+   return infoHmac.digest().slice(0, </span><span class="dark-red" >length</span><span class="dark-blue" >);
+&#125;</span></pre></pwa-example-code>
+	<p>ECDH - безопасный способразделять публичные ключи и генерировать секретный ключ. HKDF - способ получения безопасного контента из не безопасного. Будет использован в дальнейшем при кодировании контента.</p>
+	<h5 id="inputs" pwa-query-selector>Данные</h5>
+	<p>Когда необходимо отправить сообщение пользователю с данными, для этого необходимо заполнить три свойства данных:</p>
+	<ul>
+		<li>Сами данные, т.е. дополнительные данные, которые необходимо передать пользователю.</li>
+		<li><span class="dark-blue">auth</span> - кодовые данные, получаемык из объекта подписки. Это значение не следует распостранять за пределы приложения и должно содержаться в секрете. </li>
+		<li><span class="dark-blue">p256dh</span> - ключ из объекта подписки. Это открытый ключ, являющийся видом клиентского открытого ключа или открытого ключа объекта подписки. </li>
+	</ul>
+<pwa-example-code [context]="{header : 'Необходимые значения для процесса кодирования.', ext : '.js'}"><pre><span class="dark-blue" >subscription.joJSON().keys.auth
+   subscription.joJSON().keys.p256dh
+
+   subscription.getKey(</span><span class="green" >'auth'</span><span class="dark-blue" >)
+   subscription.getKey(</span><span class="green" >'p256dh'</span><span class="dark-blue" >)</span></pre></pwa-example-code>
+	<p>Эти значения необходимы в качестве ингредиентов ввода процесса кодирования, результатом которого станут: кодированные данные; соль(жарг.) - ключевое слово и открытый ключ, использующийся в качестве ключа кодирования данных.</p>
+	<span class="grey">//Продолжение временно отсутствует.</span>
+	<h4 id="extra-headers" pwa-query-selector>Дополнительные заголовки</h4>
+	<p>Были рассмотрены заголовки, использующиеся для <span class="dark-blue">JWT</span> - то, как идентифицировать приложение на сервисе уведомлений, а так же заголовки, использующиеся для отправки и кодирования дополнительных данных сообщения. Но существуют, так же дополнительные заголовки, которые сервис уведомлений использует для изменения поведения отправляемых сообщений. Некоторые из этих заголовков обязательные, некоторые нет. </p>
+	<ul>
+		<li><p>Заголовок TLL (time to live) обязательный  - время жизни, тип число, определяющее временной промежуток действительности сообщения в секундах, до того, как он будет удален сервисом уведомлений без доставки. Кодга срок, определенный в этом заголовке истечет, сообщение будет удалено из очереди доставки сервиса уведомлений и оно не будет доставлено. Если установить значение данного заголовка в ноль, сервис уведомлений попытается доставить такое сообщение немедленно, но если устройство пользователя находится вне доступа, сообщение будет немедленно удалено из очереди уведомлений после такой попытки.<br>
+			<pwa-example-code [context]="{header : 'Заголовок TLL.', ext : '.js'}"><pre><span class="dark-blue">TTL: [Время жизни сообщения в секундах]</span> </pre></pwa-example-code></p></li>
+		<li><p>Заголовок TOPIC (тема) необязательный - Содержит строку, значение которой используется для замены ожидающих доставки сообщений, текущим, если значения заголовка этих сообщений совпадают. Используется в сценариях, где отправляются несколько сообщений, в то время, когда устройство пользователя не доступно, а необходимая информация в них дублируется и реально отображаемым сообщением должно быть последнее, когда устройство пользователя окажется доступным.</p></li>
+		<li><p>Заголовок URGENCY (срочность) необязательный - указывает сервису уведомлений на важность сообщения для пользователя. Используется в сценариях экономии батареи устройства пользователя, доставляя на устройсто важные сообщения в моменты низкого заряда. Определяется, как указано ниже. Значение по умолчанию - <span class="dark-blue">normal</span>. <br>
+			<pwa-example-code [context]="{header : 'Заголовок URGENCY.', ext : '.js'}"><pre><span class="dark-blue">Urgency: [very-low | low | normal | high]</span> </pre></pwa-example-code></p></li>
+	</ul>
+	<h4 id="everything-together" pwa-query-selector>Все вместе</h4>
+	<p>Если остались вопросы о том, как все работает, всегда можно посмотреть на то, как устроены и работают <a href="https://github.com/web-push-libs" target="_blank" >библиотеки</a>. Как только нужные данные закодированы, установлены заголовки, нужно создать <span class="dark-blue">POST</span> запрос в конечную точчку (endpoint - адрес назначения), который указан в объекте подписки. Но, что делать с объектом ответа этого запроса? </p>
+	<h4 id="answer-codes" pwa-query-selector>Ответ сервиса уведомлений.</h4>
+	<p>Как только сделан запрос на сервис уведомлений, нужно проверить статус-код объекта ответа, поскольку он подскажет удачный запрос или нет.</p>
+	<pwa-api-table-template [context]="{headers : ['Статус-код', 'Описание'], templates : [t1, t2, t3, t4, t5, t6]}">
+		<ng-template #t1>
+			<td><span class="itemName">201</span></td>
+			<td>Создан. Запроос на отправку сообщения был получен и принят.</td>
+		</ng-template>
+		<ng-template #t2>
+			<td><span class="itemName">429</span></td>
+			<td>Слишком много запросов. Сервер приложения достиг ограничение в темпе отправки сообщений. Сервис уведомлений должен включать в ответ заголовок <span class="dark-blue">Retry-After</span> в котором указывается промежуток времени через который можно направлять следующий запрос.</td>
+		</ng-template>
+		<ng-template #t3>
+			<td><span class="itemName">400</span></td>
+			<td>Не корректный запрос. Это значит, что один из заголовков запроса не корректен или не верно форматирован.</td>
+		</ng-template>
+		<ng-template #t4>
+			<td><span class="itemName">404</span></td>
+			<td>Не найден. Объект подписки для данного пользователя истек и не может быть использован. В этом случае нужно удалить объект подписки, и повторить процедуру подписки пользователя заново.</td>
+		</ng-template>
+		<ng-template #t5>
+			<td><span class="itemName">410</span></td>
+			<td>Удалено. Объект подписки не действителен и должен быть удален  с сервера приложения. Выполнить отписку можно методом <span class="dark-blue">PushSubscription.unsubscribe()</span> </td>
+		</ng-template>
+		<ng-template #t6>
+			<td><span class="itemName">413</span></td>
+			<td>Слишком большой размер данных. Минимальный размер нагрузки данных, который поддерживает сервис уведомлений <span class="dark-blue">4096</span> байт (4kb).</td>
+		</ng-template>
+	</pwa-api-table-template>
+	
+
+</mat-card>
