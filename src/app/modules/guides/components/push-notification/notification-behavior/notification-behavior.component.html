@@ -1,0 +1,150 @@
+<mat-card class="pwa-page" >
+	<h4 id="notification-behavior" pwa-query-selector>Поведение оповещений.</h4>
+	<p>До текущего момента мы рассмотрели свойства, которые изменяют визуальное предствавление уведомления. Но существуют свойства, которые изменяют поведение самого уведомления. По умолчанию, вызывая метод <span class="dark-blue">showNotification()</span> только с визуальными свойствами, базовое поведение уведомления заложено по умолчанию:</p>
+	<ul>
+		<li>Нажатие на уведомление не имеет действия</li>
+		<li>Каждое новое уведомление отображается после предыдущего. Браузер не пытается редактировать последовательность выдачи.</li>
+		<li>Базовое устройство может проигрывать музыку или включать вибрацию при получении оповещения - зависит от устройства.</li>
+		<li>На некоторых устройствах оповещение будет автоматически исчезать после короткого периода времени, в то время как на других - будет отображаться, пока пользователь не провзаимодействует с ним.</li>
+	</ul>
+	<p>В этой части посмотрим на поведение уведомления при изменении некоторых его свойств. </p>
+	<h5>Событие нажатия уведомления.</h5>
+	<p>Когда пользователь нажимает на уведомление, поведением по умолнанию является отсутствие всякой реакции. Оно не закрывается и не удаляется. Общее ожидание поведения уведомления при нажатии на него - закрытие или выполнение иной логики (открыть окно, сделать некоторый удаленный вызов и пр.). Для этого нужно добавить обработчик события <span class="dark-blue">notificationclick</span> в контекст сервисного рабочего, в который перейдет управление при нажатии на уведомление. Как можно видеть из примера ниже, к сылке на сообщение, на которое нажали, можно получить из свойства объекта события <span class="dark-blue">event.notification</span>. Из него мы получаем доступ к свойствам и методам уведомления, как объекта в памяти. В этом случае можно воспользоваться методом закрытия уведомления <span class="dark-blue">close()</span> или выполнить иной вызов. </p>
+	<pwa-attention [context]="{icon : 'attention', color : '#0068d4', backgroundColor : '#d2e8ff'}">
+		<span style="font-weight: 400">Подсказка </span> :
+		<span class="blue">Разработчику все еще нужно использовать метод объекта события <b>event.waitUntil()</b>, оставляя работающим сервисного рабочего, пока код обработки активации занят.</span>
+	</pwa-attention>
+	<br>
+<pwa-example-code [context]="{header : 'Установка обработчика активации овопещения', ext : 'service-worker.js'}"><pre><span class="purple" >self</span><span class="dark-blue" >.addEventListener(</span><span class="green" >'notificationclick'</span><span class="dark-blue" >, function(</span><span class="dark-red" >event</span><span class="dark-blue" >) &#123;
+   const clickedNotification = </span><span class="dark-red" >event</span><span class="dark-blue" >.notification;
+   clickedNotification.close();</span>
+
+   <span class="grey">// Выполняем что-то с результатом нажатия на уведомление</span>
+   <span class="dark-blue" >const promiseChain = doSomething(); </span>
+   <span class="dark-red" >event</span><span class="dark-blue" >.waitUntil(promiseChain);
+&#125;);</span></pre></pwa-example-code>
+	<h4 id="Actions" pwa-query-selector>Actions (действия).</h4>
+	<p>Это свойство позволяет дать пользователю иной уровень взаимодействия, больше чем просто нажатие оповещения. Если пользователь нажимает на кнопку действия, то проверка значения в свойстве <span class="dark-blue">event.action</span>, объекта события, скажет, какая кнопка была нажата. Оно будет содержать одно из значений свойства <span class="dark-blue">action</span>, коллекции <span class="dark-blue">actions</span> :  <span class="green" >'coffee-action', 'doughnut-action', 'gramophone-action'</span> или <span class="green" >'atom-action'</span></p>
+	<pwa-example-code [context]="{header : 'Настройка объекта свойств уведомления', ext : 'service-worker.js'}"><pre class="dark-blue">const title = <span class="green" >'Actions Notification'</span>;
+    const options = &#123;
+      actions: [
+        &#123;
+          action : <span class="green" >'coffee-action'</span>,
+          title : <span class="green" >'Coffee'</span>,
+          icon : <span class="green" >'/images/demos/action-1-128x128.png'</span>
+        &#125;,
+        &#123;
+         action: <span class="green" >'doughnut-action'</span>,
+         title: <span class="green" >'Doughnut'</span>,
+         icon: <span class="green" >'/images/demos/action-2-128x128.png'</span>
+        &#125;,
+        &#123;
+          action: <span class="green" >'gramophone-action'</span>,
+           title: <span class="green" >'gramophone'</span>,
+          icon: <span class="green" >'/images/demos/action-3-128x128.png'</span>
+        &#125;,
+        &#123;
+          action: <span class="green" >'atom-action'</span>,
+          title: <span class="green" >'Atom'</span>,
+          icon: <span class="green" >'/images/demos/action-4-128x128.png' </span>
+        &#125;
+      ]
+    &#125;;
+
+    const maxVisibleActions = <span class="purple" >Notification</span>.maxActions;
+    if (maxVisibleActions < 4) &#123;
+      options.body = <span class="green" >`Это оповещение отобразит ` +
+           `$&#123;maxVisibleActions&#125; действий.`</span>;
+    &#125; else &#123;
+      options.body = <span class="green" >`Это оповещение может отобразить свыше ` +
+          `$&#123;maxVisibleActions&#125; действий.`</span>;
+    &#125;
+		<span class="purple" >registration</span>.showNotification(title, options);</pre></pwa-example-code>
+	<p>Поэтому, можно определить, что произошло нажатие на само уведомление или на одну из его кнопок действий.</p>
+<pwa-example-code [context]="{header : 'Проверка типа активности пользователя', ext : 'service-worker.js'}"><pre class="dark-blue">self.addEventListener('notificationclick', function(event) &#123;
+   if (!event.action) &#123;
+   <span class="grey">//Произошло нажатие на само оповещение</span>
+      console.log('Нажатие на оповещение.');
+      return;
+   &#125;
+
+   switch (event.action) &#123;
+      case <span class="green" >'coffee-action'</span>:
+         console.log(<span class="green" >'User ❤️️\'s coffee.'</span>);
+         break;
+      case <span class="green" >'doughnut-action'</span>:
+          console.log(<span class="green" >'User ❤️️\'s doughnuts.'</span>);
+          break;
+       case <span class="green" >'gramophone-action'</span>:
+          console.log(<span class="green" >'User ❤️️\'s music.'</span>);
+          break;
+      case <span class="green" >'atom-action'</span>:
+         console.log(<span class="green" >'User ❤️️\'s science.'</span>);
+          break;
+      default:
+         console.log(<span class="green" >`Неизвестный тип активности: '$&#123;event.action&#125;'`</span>);
+          break;
+   &#125;
+&#125;);</pre></pwa-example-code>
+	<p>Резульата работы в консоли...</p>
+	<div class="imgContainer">
+		<img src="/assets/icons/push-behavior/action-button-click-logs.png">
+	</div>
+	<h4 id="Tag" pwa-query-selector>Tag (тег).</h4>
+	<p>Свойство тег - сторока, представляющая идетнтификатор, группирующий оповещения вместе, предоставляет способ определять то, как отображать пользователю несколько оповещений. Проще объяснить на примере : <br>
+	Отображаем оповещение пользователю и устанавливаем ему свойстро тег в <span class="green">'message-group-1</span>. Объект настроек оповещения ниже: </p>
+<pwa-example-code [context]="{header : 'Объект метаданных первого оповещения', ext : 'service-worker.js'}"><pre class="dark-blue">const title = <span class="green" >'Сообщение 1 из 3'</span>;
+   const options = &#123;
+      body: <span class="green" >'With \'tag\' of \'message-group-1\''</span>,
+      tag: <span class="green" >'message-group-1'</span>
+   &#125;;
+registration.showNotification(title, options);</pre></pwa-example-code>
+	<p>В результате появиться оповещение ниже : <br>
+		<img src="/assets/icons/push-behavior/chrome-first-tag.png">
+		<br>Далее, отобразим второе оповещение с сновым значением в свойстве тег, объект метаданных которого ниже:<br>
+		<pwa-example-code [context]="{header : 'Объект метаданных второго оповещения', ext : 'service-worker.js'}"><pre class="dark-blue">const title = <span class="green" >'Сообщение 2 из 3'</span>;
+   const options = &#123;
+      body: <span class="green" >'With \'tag\' of \'message-group-2\''</span>,
+      tag: <span class="green" >'message-group-2'</span>
+   &#125;;
+registration.showNotification(title, options);</pre></pwa-example-code><br>
+		Результат отображения второго оповещения <br>
+		<img src="/assets/icons/push-behavior/chrome-second-tag.png"><br>
+		Теперь отобразим третье оповещение, значение свойства тег которого совпадает со сзначением такого же свойства первого сообщения, объект метаданных, которого ниже : <br>
+		<pwa-example-code [context]="{header : 'Объект метаданных третьего оповещения', ext : 'service-worker.js'}"><pre class="dark-blue">const title = <span class="green" >'Сообщение 3 из 3'</span>;
+   const options = &#123;
+      body: <span class="green" >'With \'tag\' of \'message-group-1\''</span>,
+      tag: <span class="green" >'message-group-1'</span>
+   &#125;;
+registration.showNotification(title, options);</pre></pwa-example-code><br>
+		<img src="/assets/icons/push-behavior/chrome-third-tag.png"><br>
+		В результате вызова метода <span class="dark-blue">showNotification()</span>, третье сообщение заменит первое, даже если он будет вызван три раза. Из этого следует, что свойство тег влияет на отображение более нового оповещения в череде оповещений, имеющих одинаковое значение в нем,  и старое сообщение будет закрыто и заменено более новым, без звукового или вибрационного предупреждения, тем самым происходит группировка оповещений.
+	</p>
+	<h4 id="Renotify" pwa-query-selector>Renotify (сигнализировать)</h4>
+	<p>В основном применяется на мобильных устройствах. Установка этого свойства позволяет настроить сигнализацию получения оповещения вибрацией устройством или запуском системных звуков (звуковая сигнализация). А так же сигнализировать замену одного сообщения другим, согласно действию свойства <span class="dark-blue">tag</span>. К прмеру, приложение чата, в котором применяется сигнализация отображения более нового сообщения. В этом случае должны быть установлены свойства <span class="dark-blue">tag, renotify</span> .</p>
+<pwa-example-code [context]="{header : 'Установка сигнализации замены сообщений', ext : 'service-worker.js'}"><pre class="dark-blue">const title = <span class="green" >'Сообщение 2 из 2'</span>;
+   const options = &#123;
+      tag: <span class="green" >'renotify'</span>
+      renotify : true
+   &#125;;
+registration.showNotification(title, options);</pre></pwa-example-code>
+	<p>Усли установить свойство <span class="dark-blue">renotify</span> без установки свойства <span class="dark-blue">tag</span>, то получим такую ошибку: </p>
+	<pwa-example-code [context]="{header : 'Ошибка при не верных настройках сигнализации', ext : 'console'}"><pre class="dark-blue"><span class="purple" >TypeError</span> : Failed to execute 'showNotification' on 'ServiceWorkerRegistration':
+<span class="purple" >Notifications</span> which set the renotify flag must specify a non-empty tag</pre></pwa-example-code>
+	<h4 id="Silent" pwa-query-selector>Silent (не сигнализировать)</h4>
+	<p>Это свойство позволяет настроить получения уведомлений, отключая действия по умолчанию (запуск вибрации, системные звуки, включение экрана устройства). Хорошо подходит для оповещений, не требующих немедленного внимания пользователя. Если одновременно установить  свойства <span class="dark-blue">silent, renotify</span>, приоритет имеет первое. </p>
+	<pwa-example-code [context]="{header : 'Отключение сигнализации получения уведомления', ext : 'service-worker.js'}"><pre class="dark-blue">const title = <span class="green" >'Тихое уведомление'</span>;
+   const options = &#123;
+      silent : true
+   &#125;;
+registration.showNotification(title, options);</pre></pwa-example-code>
+	<h4 id="requireInteraction" pwa-query-selector>Requires Interaction (Необходимость взаимодействия)</h4>
+	<p>Chrome  на десктопе будет отображать оповещение на протяжении определенного периода времени, а затем скроет его. Chrome на Андройде не имеет такого поведения, оповещения отображаются, пока пользователь не произведет какое либо явное действие (кликнет или закроет оповещение). Заставить оповещение быть видимым до пользовательского взаимодействия, необходимо установить свойство <span class="dark-blue">requireInteraction</span> в истину. Используйте это свойство без излишнего усердия. Излишние отображения сообщений и отвлечение внимания пользователя могут создавать у него негативный опыт использования системы уведомлений. </p>
+	<pwa-example-code [context]="{header : 'Необходимость взаимодействия', ext : 'service-worker.js'}"><pre class="dark-blue">const title = <span class="green" >'Необходимость пользовательского взаимодействия'</span>;
+   const options = &#123;
+		body: <span class="green" >'Свойство "requireInteraction: \'true\'".'</span>,
+      requireInteraction: true
+   &#125;;
+registration.showNotification(title, options);</pre></pwa-example-code>
+
+</mat-card>

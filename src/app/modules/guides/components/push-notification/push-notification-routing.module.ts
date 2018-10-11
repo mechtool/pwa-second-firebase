@@ -7,6 +7,8 @@ import {SubscribingUserComponent} from './subscribing-user/subscribing-user.comp
 import {PushLibrariesComponent} from './push-libraries/push-libraries.component';
 import {PushProtocolComponent} from './push-protocol/push-protocol.component';
 import {PushEventsComponent} from './push-events/push-events.component';
+import {NotificationBehaviorComponent} from './notification-behavior/notification-behavior.component';
+import {CommonPatternsComponent} from './common-patterns/common-patterns.component';
 
 
 const routes: Routes = [
@@ -17,6 +19,8 @@ const routes: Routes = [
     {path : 'push-libraries', component : PushLibrariesComponent, data : {type : 'push-libraries'}},
     {path : 'push-protocol', component : PushProtocolComponent, data : {type : 'push-protocol'}},
     {path : 'push-events', component : PushEventsComponent, data : {type : 'push-events'}},
+    {path : 'notification-behavior', component : NotificationBehaviorComponent, data : {type : 'notification-behavior'}},
+    {path : 'common-patterns', component : CommonPatternsComponent, data : {type : 'common-patterns'}},
     {path  : "" , pathMatch :"full", redirectTo : "introduction"}
 ];
 

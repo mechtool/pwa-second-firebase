@@ -1,3 +1,45 @@
-<p>
-  push-events works!
-</p>
+<mat-card class="pwa-page" >
+	<p>До этого момента было рассмотрена подписка пользователя на получения входящих уведомлений. Следующий шаг - получение этого сообщения устройством пользователя и отображения оповещения.</p>
+	<h4 id="pushEvent" pwa-query-selector>Событие <span class="dark-blue">Push</span> .</h4>
+	<p>Когда сообщение достигает устройства пользователя, в контексте сервисного рабочего, установленного предварительно, вызывается событие <span class="dark-blue">push</span>, и для реагирования, на него необходимо установить обработчик. Код ниже, устанавливает обработчик события <span class="dark-blue">push</span>. Немного странным может показаться обращение к глобальной переменной <span class="purple">self</span> - контексту сервисного рабочего, аналогично глобального объекта <span class="purple">window</span> в контексте страницы, который указывает на его же экземпляр в пространстве файла регистрации. Пример ниже использует установку обработчика контекста <span class="dark-blue">self.addEventListener()</span> , который является псевдонимом самого экземпляра сервисного рабочего :</p>
+<pwa-example-code [context]="{header : 'Установка обработчика события push ', ext : 'service-worker.js'}"><pre><span class="purple" >self</span><span class="dark-blue" >.addEventListener(</span><span class="green" >'push'</span><span class="dark-blue" >, function(</span><span class="dark-red" >event</span><span class="dark-blue" >) &#123;
+   if (</span><span class="dark-red" >event</span><span class="dark-blue" >.data) &#123;
+      console.log(</span><span class="green" >'Событие push имеет свойство data: '</span><span class="dark-red" >, event</span><span class="dark-blue" >.data.text());
+   &#125; else &#123;
+      console.log(</span><span class="green" >'Событие push не имеет свойство data.'</span><span class="dark-blue" >);
+   &#125;
+&#125;);</span></pre></pwa-example-code>
+	<p>Несколько способов получения информации различного формата из объекта данных: </p>
+<pwa-example-code [context]="{header : 'Получение данных различного формата ', ext : 'service-worker.js'}"><pre><span class="grey">//Данные строкой</span>
+<span class="dark-blue" >event.data.text()</span>
+<span class="grey">// Данные в виде объекта JSON</span>
+<span class="dark-blue" >event.data.json() </span>
+<span class="grey">// Данные в виде двоичного объекта </span>
+<span class="dark-blue" >event.data.blob() </span>
+<span class="grey">// Данные в виде буфера массива</span>
+<span class="dark-blue" >event.data.arrayBuffer()</span></pre></pwa-example-code>
+	<h4 id="waitUntil" pwa-query-selector>.waitUntil()</h4>
+	<p>Нужно понимать, что разработчик имеет минимум контроля над продолжительностью работы кода самого сервисного рабочего. Только браузер решает, когда активировать работу сервисного рабочего, а когда его отключить. Только один способ может сказать браузеру приостановить немедленное выполнение кода сервисного рабочего до возвращения промиса в аргумент метода <span class="dark-blue">event.waitUntil()</span>, по которому браузер приостановит выполнение метода и будет ожидать разрешения промиса. Для события <span class="dark-blue">push</span> существует дополнительное требование по которому разработчик должени отобразить сообщение до дого, как возвращаемый в аргумент метода промис разрешиться (или откажет). Базовый пример ниже. Вызывая метод <span class="dark-blue">self.registration.showNotification()</span> он отображает оповещение пользователю, а возвращаемый промис передается в метод <span class="dark-blue">.waitUntil()</span> :  </p>
+<pwa-example-code [context]="{header : 'Пример отображения оповещения пользователю с сетевым запросом ', ext : 'service-worker.js'}"><pre><span class="purple" >self</span><span class="dark-blue" >.addEventListener(</span><span class="green" >'push'</span><span class="dark-blue" >, function(</span><span class="dark-red" >event</span><span class="dark-blue" >) &#123;
+   const analyticsPromise = pushReceivedTracking();
+   const pushInfoPromise = fetch(</span><span class="green" >'/api/get-more-data'</span><span class="dark-blue" >)
+      .then(function(</span><span class="dark-red" >response</span><span class="dark-blue" >) &#123;
+         return </span><span class="dark-red" >response</span><span class="dark-blue" >.json();
+      &#125;).then(function(</span><span class="dark-red" >response</span><span class="dark-blue" >) &#123;
+          const title = </span><span class="dark-red" >response</span><span class="dark-blue" >.data.userName + </span><span class="green" >' говорит...'</span><span class="dark-blue" >;
+	const message =</span><span class="dark-red" >response</span><span class="dark-blue" >.data.message; </span>
+	      <b class="dark-red" >return </b><span class="purple" >self</span><span class="dark-blue" >.registration.showNotification(title, &#123;
+                  body : message
+                &#125;);
+      &#125;);
+   const promiseChain = </span><span class="purple" >Promise</span><span class="dark-blue" >.all([
+      analyticsPromise,
+      pushInfoPromise
+    ]);</span>
+   <span class="dark-red" >event</span><span class="dark-blue" >.waitUntil(promiseChain);
+&#125;);</span></pre></pwa-example-code>
+	<p>Основная причина по которой необходимо обратить внимание на метод <span class="dark-blue">.waitUntil()</span> - то, как обрабатывается отвергнутый промис. Chrome просто отобразит пользователю стандартное оповещение, из которого ясно, что сайт был обновлен в фоне. Но оповещение, которое предназначалось для пользователя не отобразиться после того, как в метод <span class="dark-blue">event.waitUntil()</span> вернется отрицательный промис и он завершиться, оно просто исчезнет. Основной момент в недопонимании работы этого метода - отсутствие оператора возврата <b class="dark-red">return</b>, который должен вернуть результат отображение оповещения, и если он отсутствует, браузер самостоятельно формирует отрицательный промис и возвращает его в метод вместо разработчика, отображая оповещение по умолчанию. Нужно помнить, если видите отображаемое оповещение по умочанию - проверте возвращаемый промис в методе <span class="dark-blue">event.waitUntil()</span>.</p>
+	<div class="imgContainer">
+		<img src="/assets/icons/push-events/default-notification-mobile.png">
+	</div>
+</mat-card>

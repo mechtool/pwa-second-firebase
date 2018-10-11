@@ -13,6 +13,8 @@ import {SubscribingUserComponent} from './subscribing-user/subscribing-user.comp
 import { PushLibrariesComponent } from './push-libraries/push-libraries.component';
 import { PushProtocolComponent } from './push-protocol/push-protocol.component';
 import { PushEventsComponent } from './push-events/push-events.component';
+import { NotificationBehaviorComponent } from './notification-behavior/notification-behavior.component';
+import { CommonPatternsComponent } from './common-patterns/common-patterns.component';
 
 @NgModule({
   imports: [
@@ -30,6 +32,8 @@ import { PushEventsComponent } from './push-events/push-events.component';
       PushLibrariesComponent,
       PushProtocolComponent,
       PushEventsComponent,
+      NotificationBehaviorComponent,
+      CommonPatternsComponent,
   ]
 })
 export class PushNotificationModule { }
