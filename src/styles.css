@@ -65,8 +65,19 @@ table.mainTable{
 }
 table.mainTable td{
     padding: 16px !important;
-}
 
+}
+ /*-------------------img container-----------------------*/
+.imgContainer{
+    display: flex;
+    justify-content: center;
+}
+.imgContainer img{
+    width: 80%;
+    height: 80%;
+    max-width: initial;
+    max-height: initial;
+}
 /*-----------------template colors------------------------*/
 *.d-blue, *.blue{
     color : #0064d5;

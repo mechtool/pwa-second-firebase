@@ -83,6 +83,8 @@ export class AppComponent implements AfterViewInit{
                     new SideNavItem({text : 'Использование библиотеки', href :'/guides/push-notification/push-libraries',activeClass : 'activeRoute',  className :'second'}),
                     new SideNavItem({text : 'Протокол Web Push', href :'/guides/push-notification/push-protocol',activeClass : 'activeRoute',  className :'second'}),
                     new SideNavItem({text : 'Обработка событий', href :'/guides/push-notification/push-events',activeClass : 'activeRoute',  className :'second'}),
+                    new SideNavItem({text : 'Поведение оповещения', href :'/guides/push-notification/notification-behavior',activeClass : 'activeRoute',  className :'second'}),
+                    new SideNavItem({text : 'Общие шаблоны', href :'/guides/push-notification/common-patterns',activeClass : 'activeRoute',  className :'second'}),
             ]}),
             new SideNavItem({text : 'Установка на устройство',href : '/guides/install-prompt', activeClass : 'activeRoute', className : 'first', icon : 'remove',  children : [
                     new SideNavItem({text : 'Диалоги установки', href : '/guides/install-prompt/install-messages', activeClass : 'activeRoute', className : 'second'}),

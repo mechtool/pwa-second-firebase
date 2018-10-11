@@ -37,9 +37,8 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
-/dist/
-/node_modules/
 /.editorconfig
 /.gitignore
 /e2e/
 /samples/
+/.firebaserc
