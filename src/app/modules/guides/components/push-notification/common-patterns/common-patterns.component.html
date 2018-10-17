@@ -1,7 +1,7 @@
 <mat-card class="pwa-page" >
-	<h4 id="notification-behavior" pwa-query-selector>Общие шаблоны оповещений.</h4>
+	<h4 id="commonTemplates" pwa-query-selector>Общие шаблоны оповещений.</h4>
 	<p>В этой части руководства познакомимся с общими строительными блоками, шаблонами реализации <span class="dark-blue">Web Push</span>, что предполагает использование нескольких различных API, доступные сервисному рабочему.</p>
-	<h4 id="notificationclick" pwa-query-selector>Событие закрытия уведомления.</h4>
+	<h4 id="notificationclose" pwa-query-selector>Событие закрытия уведомления.</h4>
 	<p>В предыдущей части было описано использование события <span class="dark-blue">notificationclick</span>. Наряду с этим событием существует событие <span class="dark-blue">notificationclose</span> - событие закрытие уведомления. Оно вызывается, когда пользователь нажимает на элемент закрытия уведомления (крестик), вместо самого уведомления, или производит  в отношении уведомления сбрасывающий жест. Обычно, это событие используется в качестве аналитического отслеживания эффективности привлечения пользователя уведомлениями.</p>
 	<pwa-example-code [context]="{header : 'Установка обработчика события закрытия уведомления', ext : 'service-worker.js'}"><pre class="dark-blue"><span class="purple" >self</span>.addEventListener(<span class="green" >'notificationclose'</span>, function(<span class="dark-red" >event</span>) &#123;
      const dismissedNotification = <span class="dark-red" >event</span>.notification;
@@ -27,12 +27,12 @@ registration.showNotification(<span class="dark-blue" >'Оповещение с 
         console.log(<span class="dark-sky" >`  $&#123;key&#125; : $&#123;notificationData[key]&#125;`</span>);
    &#125;);
 console.log(<span class="green" >''</span>);</pre></pwa-example-code>
-	<h4>Открытие окна.</h4>
+	<h4 id="openWindow" pwa-query-selector>Открытие окна.</h4>
 	<p>Одной из ответственностей оповещения - открыть окно или закладку по определенному URL. Это выполняется при помощи метода <a class="dark-blue" href="https://developer.mozilla.org/en-US/docs/Web/API/Clients/openWindow" target="_blank">clients.openWindow()</a>, доступному для сервисного рабочего. В нашем событии <span class="dark-blue">notificationclick</span>, открываем окно таким образом (пример): </p>
 <pwa-example-code [context]="{header : 'Пример открытия окна', ext : 'service-worker.js'}"><pre class="dark-blue">const examplePage = <span class="green" >'/demos/notification-examples/example-page.html'</span>;
 const promiseChain = <span class="purple" >clients</span>.openWindow(examplePage);
 <span class="dark-red" >event</span>.waitUntil(promiseChain);</pre></pwa-example-code>
-	<h4>Фокус на неактивном окне.</h4>
+	<h4 id="focusExWindow" pwa-query-selector>Фокус на неактивном окне.</h4>
 	<p>При работе с оповещениями желательно фокусироватся на открытом неактивном окне, вместо открытие нового окна с таким же адресом, при активации оповещения пользователем. До подробного рассмотрения приема, нужно отметить, что имреративно (в коде) это возможно только для страниц сервера общего происхождения, т.е., при помощи этого метода нам вернуться только те открытые страницы в браузере, которые принадлежат только нашему сайту, предотвращая просмотр разработчиками страниц других сайтов, открытых в браузере пользователя. Используя предыдущий пример, изменяем код для отображения адреса, уже отображенной страницы: </p>
 <pwa-example-code [context]="{header : 'Пример открытия или фокусировки окна', ext : 'service-worker.js'}"><pre class="dark-blue">
 <span class="grey">Получаем абсолютный URL на адрес, на который нужно перейти, для последующего его сравнения</span>
@@ -68,7 +68,7 @@ const urlToOpen = new <span class="purple" >URL</span>(examplePage, self.locatio
     &#125;);
     <span class="grey">Держим активность сервисного рабочего до исполнения всех промисов в цепочке.</span>
     <span class="dark-red" >event</span>.waitUntil(promiseChain);</pre></pwa-example-code>
-	<h4>Объединение оповещений.</h4>
+	<h4 id="mergingNotifications" pwa-query-selector>Объединение оповещений.</h4>
 	<p>Уже разбиралась тема применения свойства <span class="dark-blue">tag</span> для замены более ранних сообщений, более поздними, имеющими одинаковое значение свойства. Однако, можно использовать <span class="dark-blue">Notification API</span> для более сложного слияния оповещений. К примеру, приложение чата, где разработчик может реализовать отображение одного сообщения пользователю с текстом о количестве пришедших сообщений от другого пользователя, вместо отображения двух сообщений этого пользователя. Для этого производиться манипуляция оповещениями иным образом, т.е. используя <a class="dark-blue" href="https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration/getNotifications" target="_blank">registration.getNotifications()</a> API, которые предоставляют доступ ко всем доступным для приложения оповещениям. Предположим, что каждое оповещение имеет поле данных, которое включает имя пользователя. Первым делом необходимо найти последнее открытое оповещение для пользователя с указанным именем пользователя в поле данных, и земенить его новым . Запустим метод <span class="dark-blue">registration.getNotifications()</span>, и в цикле найдем в поле <span class="dark-blue">notification.data</span> имя определенного пользователя.</p>
 <pwa-example-code [context]="{header : 'Пример перечисления оповещений в цикле для нахождения данных', ext : 'service-worker.js'}"><pre class="dark-blue">const promiseChain = <span class="purple" >registration</span>.getNotifications()
     .then(<span class="dark-red" >notifications</span> => &#123;
@@ -116,7 +116,7 @@ const urlToOpen = new <span class="purple" >URL</span>(examplePage, self.locatio
 		<img style="width: fit-content" src="/assets/icons/common-patterns/merge-notification-second.png">
 	</div>
 	<p>Такой подход хорошо смотрится в приложении, когда оповещения появляются одно над другим, что существенно эффективнее простой замены оповещений.</p>
-	<h4>Исключение из правил.</h4>
+	<h4 id="exceptionRule" pwa-query-selector>Исключение из правил.</h4>
 	<p>Выше, в руководстве, утверждалось, что разработчик обязан отобразить оповещение, когда устройство получило его от сервиса уведомлений, и это так в большинстве случаев. Но, существует сценарий, где разработчик не обязан отображать оповещение - когда пользователь уже находиться на сайте-хозяине оповещения, открыта и сфокусированна его страница. Внутри события <span class="dark-blue">push</span> можно проверить нужно ли отображать оповещение, проверив клиентов сервисного рабочего для сфокусированных страниц. Код ниже, получает все окна и ищет сфокусированное окно:</p>
 	<pwa-example-code [context]="{header : 'Пример функции поиска сфокусированного окна', ext : 'service-worker.js'}"><pre class="dark-blue">function isClientFocused() &#123;
     return <span class="purple" >clients</span>.matchAll(&#123;
@@ -144,7 +144,7 @@ const urlToOpen = new <span class="purple" >URL</span>(examplePage, self.locatio
     return  <span class="purple" >self</span>.registration.showNotification(<span class="green" >'Нужно отобразить оповещение!'</span>);
 &#125;);
 event.waitUntil(promiseChain);</pre></pwa-example-code>
-	<h4>Сообщение окну из обработчика события Push.</h4>
+	<h4 id="messagePage" pwa-query-selector>Сообщение окну из обработчика события Push.</h4>
 	<p>Выше мы видим, что можно не выводить оповещение пользователю, если он уже находиться на сайте. Но, что если на все же нужно дать пользователю знать, что событие произошло, но оповещение слишком трудно передать? Один выход - отправить сообщение из сервисного рабочего странице, которая отобразит сообщение или обновит его, информируя пользователя о событии. Скажим, мы получиль оповещение от сервиса уведомлений, проверили, что пользователь находиться на сфокусированной странице, и далее мы отправляем сообщение через Post Message API каждой открытой странице:</p>
 <pwa-example-code [context]="{header : 'Отправка сообщения всем открытым страницам', ext : 'service-worker.js'}"><pre class="dark-blue">  const promiseChain = isClientFocused().then((<span class="dark-red" >clientIsFocused</span>) => &#123;
     if (<span class="dark-red" >clientIsFocused</span>) &#123;
